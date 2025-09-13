@@ -1,4 +1,4 @@
-/*
+  /*
   Basic Code to run the OpenDrop V4.1, Research platfrom for digital microfluidics
   Object codes are defined in the OpenDrop.h library
   Written by Urs Gaudenz from GaudiLabs, 2021
@@ -251,6 +251,7 @@ enum JoystickDIR
   DOWN,
   LEFT,
   RIGHT,
+  HOLD,
   NONE
 } joystick_state;
 
@@ -300,16 +301,33 @@ void joystick()
     {
       case RIGHT:
         myDrop->move_right();
+        joystick_state = HOLD;
         break;
       case UP:
         myDrop->move_up();
+        joystick_state = HOLD;
+
         break;
       case LEFT:
         myDrop->move_left();
+        joystick_state = HOLD;
+
         break;
       case DOWN:
         myDrop->move_down();
+        joystick_state = HOLD;
+
         break;
+      case HOLD:
+        if ((JOY_value > 725)||(JOY_value > 597)||(JOY_value > 256)||(JOY_value > 100))
+    {
+      joystick_state = HOLD;
+    }
+    else
+    {
+      break;
+    }
+
       default:
         break;
     }
