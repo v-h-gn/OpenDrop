@@ -11,7 +11,7 @@
 #endif
 
 #include "Adafruit_GFX.h"
-//#include <tuple>
+// #include <tuple>
 
 #define max_drops 8
 
@@ -52,43 +52,40 @@ private:
   bool _moving;
 };
 
-enum DISPENSE_SM
+enum DispenseState
 {
   UPDATE,
-  DROP123,
-  DROP2,
-  DROP13,
-  DROP12,
-  DROP23
+  STEP_1,
+  STEP_2,
+  STEP_3,
+  STEP_4,
+  STEP_5,
+  STEP_6,
 };
 
-struct ReservoirPosition
+struct Position
 {
   int x;
   int y;
 };
 
-enum reservoir
-{
-  TOPLEFT,
-  TOPRIGHT,
-  BOTTOMLEFT,
-  BOTTOMRIGHT
-};
-
 class Reservoir
 {
-
-
 public:
-  Reservoir(int reservoir, int count);
-
-  ReservoirPosition getPosition(int count, int droplet);
+  Reservoir(int reservoir);
+  Position getDispenseAnimationPosition(int droplet);
+  enum Location
+  {
+    TOP_RIGHT,
+    BOTTOM_RIGHT,
+    TOP_LEFT,
+    BOTTOM_LEFT,
+  };
+  void updateState() { dispenseState = static_cast<DispenseState>((dispenseState + 1) % 7);};
 
 private:
   int reservoir;
-  int count;
-  DISPENSE_SM dispense_state;
+  DispenseState dispenseState;
 };
 
 class OpenDrop
@@ -96,9 +93,11 @@ class OpenDrop
 public:
   OpenDrop(uint8_t addr = 0x60);
   friend class Drop;
-  friend class Reservoir;
+  Reservoir top_left_reservoir = Reservoir(Reservoir::TOP_LEFT);
+  Reservoir top_right_reservoir = Reservoir(Reservoir::TOP_RIGHT);
+  Reservoir bottom_left_reservoir = Reservoir(Reservoir::BOTTOM_LEFT);
+  Reservoir bottom_right_reservoir = Reservoir(Reservoir::BOTTOM_RIGHT);
   void begin(char code_str[]);
-
   bool run(void);
   void dispense(Reservoir reservoir, int delay_us);
   void update(void);

@@ -852,908 +852,862 @@ void OpenDrop::update(void)
   {
     OpenDropAudio.playMe(3);
   }
+  
 }
 
 int count = 0;
 
-DISPENSE_SM dispense_state;
+DispenseState dispenseState;
 
-void OpenDrop::dispense(Reservoir reservoir)
+void OpenDrop::dispense(Reservoir reservoir, int delay_us)
 {
 
   Drop *Drop1 = this->getDrop();
   Drop *Drop2 = this->getDrop();
   Drop *Drop3 = this->getDrop();
+
+  Drop* drops_array[3] = {Drop1, Drop2, Drop3};
+
+  for (uint8_t droplet_num = 0; droplet_num < this->drop_count; droplet_num++)
+  {
+    Position pos = reservoir.getDispenseAnimationPosition(droplet_num);
+    drops_array[droplet_num]->begin(pos.x, pos.y);
+  }
+  this->update();
+  reservoir.updateState();
 }
 
-std::tuple<int, int> getPosition(int count, int droplet)
+Position Reservoir::getDispenseAnimationPosition(int droplet)
 {
-
-  switch (dispense_state)
+  switch (dispenseState)
   {
-
-  case DROP123:
-    if (reservoir == 1)
-    {
+  case STEP_1:
+    if (reservoir == TOP_RIGHT)
       return {15, 3};
-    }
-    else if (reservoir == 2)
-    {
+    else if (reservoir == BOTTOM_RIGHT)
       return {15, 4};
-    }
-    else if (reservoir == 3)
-    {
+    else if (reservoir == TOP_LEFT)
       return {0, 3};
-    }
-    else if (reservoir == 4)
-    {
+    else if (reservoir == BOTTOM_LEFT)
       return {0, 4};
-    }
-
-  case DROP2:
-    if (reservoir == 1)
-    {
-      return {15, 2};
-    }
-    else if (reservoir == 2)
-    {
+    else
+      return {-1, -1}; // Invalid reservoir
+  case STEP_2:
+    if (reservoir == TOP_RIGHT)
+      return {15, 4};
+    else if (reservoir == BOTTOM_RIGHT)
       return {15, 5};
-    }
-    else if (reservoir == 3)
-    {
-      return {0, 2};
-    }
-    else if (reservoir == 4)
-    {
+    else if (reservoir == TOP_LEFT)
+      return {0, 4};
+    else if (reservoir == BOTTOM_LEFT)
       return {0, 5};
-    }
-
-  case DROP13:
-    if (reservoir == 1)
+    else
+      return {-1, -1}; // Invalid reservoir
+  case STEP_3:
+    if (reservoir == TOP_RIGHT)
     {
       if (droplet == 0)
-      {
         return {15, 1};
-      }
       else
-      {
         return {15, 0};
-      }
     }
-    else if (reservoir == 2)
+    else if (reservoir == BOTTOM_RIGHT)
     {
       if (droplet == 0)
-      {
         return {15, 6};
-      }
       else
-      {
         return {15, 7};
-      }
     }
-    else if (reservoir == 3)
+    else if (reservoir == TOP_LEFT)
     {
       if (droplet == 0)
-      {
         return {0, 1};
-      }
       else
-      {
         return {0, 0};
-      }
     }
-    else if (reservoir == 4)
+    else if (reservoir == BOTTOM_LEFT)
     {
       if (droplet == 0)
-      {
         return {0, 6};
-      }
       else
-      {
         return {0, 7};
-      }
     }
-
-  case DROP23:
-    if (reservoir == 1)
+    else
+    {
+      return {-1, -1}; // Invalid reservoir
+    }
+  case STEP_4:
+    if (reservoir == TOP_RIGHT)
+    {
+      return {14, 1};
+    }
+    else if (reservoir == BOTTOM_RIGHT)
+    {
+      return {14, 6};
+    }
+    else if (reservoir == TOP_LEFT)
+    {
+      return {1, 1};
+    }
+    else if (reservoir == BOTTOM_LEFT)
+    {
+      return {1, 6};
+    }
+    else
+    {
+      return {-1, -1}; // Invalid reservoir
+    }
+  case STEP_5:
+    if (reservoir == TOP_RIGHT)
     {
       if (droplet == 1)
-      {
         return {15, 3};
-      }
       else
-      {
         return {15, 2};
-      }
     }
-    else if (reservoir == 2)
+    else if (reservoir == BOTTOM_RIGHT)
     {
       if (droplet == 1)
-      {
         return {15, 4};
-      }
       else
-      {
         return {15, 5};
-      }
     }
-    else if (reservoir == 3)
+    else if (reservoir == TOP_LEFT)
     {
       if (droplet == 1)
-      {
         return {0, 3};
-      }
       else
-      {
         return {0, 2};
-      }
     }
-    else if (reservoir == 4)
+    else if (reservoir == BOTTOM_LEFT)
     {
       if (droplet == 1)
-      {
         return {0, 4};
-      }
       else
-      {
         return {0, 5};
-      }
     }
-
-    if (count == 5)
+    else
     {
-      if (reservoir == 1)
-      {
-        if (droplet == 1)
-        {
-          return {15, 3};
-        }
-        else
-        {
-          return {15, 3};
-        }
-      }
-      else if (reservoir == 2)
-      {
-        if (droplet == 1)
-        {
-          return {15, 4};
-        }
-        else
-        {
-          return {15, 4};
-        }
-      }
-      else if (reservoir == 3)
-      {
-        if (droplet == 1)
-        {
-          return {0, 3};
-        }
-        else
-        {
-          return {0, 3};
-        }
-      }
-      else if (reservoir == 4)
-      {
-        if (droplet == 1)
-        {
-          return {0, 4};
-        }
-        else
-        {
-          return {0, 4};
-        }
-      }
+      return {-1, -1}; // Invalid reservoir
     }
+  case STEP_6:
+    if (reservoir == TOP_RIGHT)
+      return {15, 3};
+    else if (reservoir == BOTTOM_RIGHT)
+      return {15, 4};
+    else if (reservoir == TOP_LEFT)
+      return {0, 3};
+    else if (reservoir == BOTTOM_LEFT)
+      return {0, 4};
+    else
+      return {-1, -1}; // Invalid reservoir
   }
 };
 
-  // unused function
-  bool OpenDrop::run(void)
+// unused function
+bool OpenDrop::run(void)
+{
+  bool transition = false;
+  this->read_Fluxels();
+  this->update_Drops();
+
+  for (int i = 0; i < this->drop_count; i++)
   {
-    bool transition = false;
-    this->read_Fluxels();
-    this->update_Drops();
+    bool up = true;
+    bool down = true;
+    bool left = true;
+    bool right = true;
+    int d1 = 6000;
+    int d2 = 6000;
 
-    for (int i = 0; i < this->drop_count; i++)
+    // sets _runing to either true or false base on if the drop is at its goal
+    _runing = ((drops[i].position_x() != drops[i].goal_x()) | (drops[i].position_y() != drops[i].goal_y()));
+    transition = transition | _runing;
+
+    if (_runing & !drops[i].is_moving())
     {
-      bool up = true;
-      bool down = true;
-      bool left = true;
-      bool right = true;
-      int d1 = 6000;
-      int d2 = 6000;
 
-      // sets runing to either true or false base on if the drop is at its goal
-      _runing = ((drops[i].position_x() != drops[i].goal_x()) | (drops[i].position_y() != drops[i].goal_y()));
-      transition = transition | _runing;
+      if (drops[i].position_x() == 0)
+        left = false;
+      if (drops[i].position_x() == (FluxlPad_width - 1))
+        right = false;
+      if (drops[i].position_y() == 0)
+        up = false;
+      if (drops[i].position_y() == (FluxlPad_heigth - 1))
+        down = false;
 
-      if (_runing & !drops[i].is_moving())
-      {
-
-        if (drops[i].position_x() == 0)
-          left = false;
-        if (drops[i].position_x() == (FluxlPad_width - 1))
+      if (right)
+        if (!free_Fluxel(drops[i].position_x() + 1, drops[i].position_y(), RIGHT))
           right = false;
-        if (drops[i].position_y() == 0)
+      if (left)
+        if (!free_Fluxel(drops[i].position_x() - 1, drops[i].position_y(), LEFT))
+          left = false;
+      if (up)
+        if (!free_Fluxel(drops[i].position_x(), drops[i].position_y() - 1, UP))
           up = false;
-        if (drops[i].position_y() == (FluxlPad_heigth - 1))
+      if (down)
+        if (!free_Fluxel(drops[i].position_x(), drops[i].position_y() + 1, DOWN))
           down = false;
 
-        if (right)
-          if (!free_Fluxel(drops[i].position_x() + 1, drops[i].position_y(), RIGHT))
-            right = false;
-        if (left)
-          if (!free_Fluxel(drops[i].position_x() - 1, drops[i].position_y(), LEFT))
-            left = false;
-        if (up)
-          if (!free_Fluxel(drops[i].position_x(), drops[i].position_y() - 1, UP))
-            up = false;
-        if (down)
-          if (!free_Fluxel(drops[i].position_x(), drops[i].position_y() + 1, DOWN))
-            down = false;
+      if (right)
+        d1 = pow((drops[i].position_x() + 1) - (drops[i].goal_x()), 2) + pow((drops[i].position_y()) - (drops[i].goal_y()), 2);
 
-        if (right)
-          d1 = pow((drops[i].position_x() + 1) - (drops[i].goal_x()), 2) + pow((drops[i].position_y()) - (drops[i].goal_y()), 2);
-
-        if (left)
+      if (left)
+      {
+        d2 = pow((drops[i].position_x() - 1) - (drops[i].goal_x()), 2) + pow((drops[i].position_y()) - (drops[i].goal_y()), 2);
+        if (d2 < d1)
         {
-          d2 = pow((drops[i].position_x() - 1) - (drops[i].goal_x()), 2) + pow((drops[i].position_y()) - (drops[i].goal_y()), 2);
-          if (d2 < d1)
-          {
-            right = false;
-            d1 = d2;
-          }
-          else
-            left = false;
-        };
-
-        /*
-        if (up) Serial.println("up");
-        if (down) Serial.println("down");
-        if (left) Serial.println("left");
-        if (right) Serial.println("rigth");
-        */
-
-        if (up)
-        {
-          d2 = pow((drops[i].position_x()) - (drops[i].goal_x()), 2) + pow((drops[i].position_y() - 1) - (drops[i].goal_y()), 2);
-          if (d2 < d1)
-          {
-            left = false;
-            right = false;
-            d1 = d2;
-          }
-          else
-            up = false;
+          right = false;
+          d1 = d2;
         }
+        else
+          left = false;
+      };
 
-        if (down)
+      /*
+      if (up) Serial.println("up");
+      if (down) Serial.println("down");
+      if (left) Serial.println("left");
+      if (right) Serial.println("rigth");
+      */
+
+      if (up)
+      {
+        d2 = pow((drops[i].position_x()) - (drops[i].goal_x()), 2) + pow((drops[i].position_y() - 1) - (drops[i].goal_y()), 2);
+        if (d2 < d1)
         {
-          d2 = pow((drops[i].position_x()) - (drops[i].goal_x()), 2) + pow((drops[i].position_y() + 1) - (drops[i].goal_y()), 2);
-          if (d2 < d1)
-          {
-            left = false;
-            up = false;
-            right = false;
-            d1 = d2;
-          }
-          else
-            down = false;
+          left = false;
+          right = false;
+          d1 = d2;
         }
+        else
+          up = false;
+      }
 
-        /*
-        Serial.println("pow");
-        Serial.println(d1);
-        Serial.println(drops[i].position_x());
-        Serial.println(drops[i].position_y());
-        */
+      if (down)
+      {
+        d2 = pow((drops[i].position_x()) - (drops[i].goal_x()), 2) + pow((drops[i].position_y() + 1) - (drops[i].goal_y()), 2);
+        if (d2 < d1)
+        {
+          left = false;
+          up = false;
+          right = false;
+          d1 = d2;
+        }
+        else
+          down = false;
+      }
 
-        if (up)
-          drops[i].move_up();
-        else if (down)
-          drops[i].move_down();
-        else if (left)
-          drops[i].move_left();
-        else if (right)
-          drops[i].move_right();
+      /*
+      Serial.println("pow");
+      Serial.println(d1);
+      Serial.println(drops[i].position_x());
+      Serial.println(drops[i].position_y());
+      */
 
-      }; // if move
+      if (up)
+        drops[i].move_up();
+      else if (down)
+        drops[i].move_down();
+      else if (left)
+        drops[i].move_left();
+      else if (right)
+        drops[i].move_right();
 
-    }; // for loop
+    }; // if move
 
-    this->update();
+  }; // for loop
 
-    return transition;
-  };
+  this->update();
 
-  Drop *OpenDrop::getDrop() // @todo rewrite the GetDrop function
-  {
-    uint8_t num = this->drop_count;
-    num++;
-    this->drop_count = num;
-    drops[num - 1]._dropnum = num;
-    // Serial.println(max_drops);
-    if (num > max_drops)
-      return NULL;
+  return transition;
+};
 
-    return &drops[num - 1];
-  }
+Drop *OpenDrop::getDrop() // @todo rewrite the GetDrop function
+{
+  uint8_t num = this->drop_count;
+  num++;
+  this->drop_count = num;
+  drops[num - 1]._dropnum = num;
+  // Serial.println(max_drops);
+  if (num > max_drops)
+    return NULL;
 
-  Drop::Drop(void)
-  {
-  }
+  return &drops[num - 1];
+}
 
-  void OpenDrop::set_voltage(uint16_t voltage, bool AC_on, uint16_t frequence)
-  {
-    AC_frequency = frequence;
-    tcConfigure(AC_frequency); // configure the timer to run at <sampleRate>Hertz
+Drop::Drop(void)
+{
+}
+
+void OpenDrop::set_voltage(uint16_t voltage, bool AC_on, uint16_t frequence)
+{
+  AC_frequency = frequence;
+  tcConfigure(AC_frequency); // configure the timer to run at <sampleRate>Hertz
 
 #if OpenDropV40_downgrade
-    VOLTAGE_set_value = 255 * ((1.5 * 1500000) / (voltage - 1.5) - 6800) / 10000; // Calculate set value (max 255) for 10kOhm digial potentiometer from reference voltage 1.5V, voltage devider R1.5MOhm / 6.8kOhm,
+  VOLTAGE_set_value = 255 * ((1.5 * 1500000) / (voltage - 1.5) - 6800) / 10000; // Calculate set value (max 255) for 10kOhm digial potentiometer from reference voltage 1.5V, voltage devider R1.5MOhm / 6.8kOhm,
 #else
-    VOLTAGE_set_value = 255 * ((1.5 * 1500000) / (voltage - 1.5) - 6800) / 50000; // Calculate set value (max 255) for 50kOhm digial potentiometer from reference voltage 1.5V, voltage divider R1.5MOhm / 6.8kOhm,
+  VOLTAGE_set_value = 255 * ((1.5 * 1500000) / (voltage - 1.5) - 6800) / 50000; // Calculate set value (max 255) for 50kOhm digial potentiometer from reference voltage 1.5V, voltage divider R1.5MOhm / 6.8kOhm,
 #endif
 
-    spi_out(VCS_pin, cmd_byte0, VOLTAGE_set_value); // Set Voltage Level / send out data to chip 1, pot 0
-    Voltage_set = voltage;
-    AC_flag = AC_on;
-  }
+  spi_out(VCS_pin, cmd_byte0, VOLTAGE_set_value); // Set Voltage Level / send out data to chip 1, pot 0
+  Voltage_set = voltage;
+  AC_flag = AC_on;
+}
 
-  void OpenDrop::set_Magnet(uint8_t magnet, bool state)
+void OpenDrop::set_Magnet(uint8_t magnet, bool state)
+{
+  Adapter.set_Magnet(magnet, state);
+}
+
+uint8_t OpenDrop::get_ID()
+{
+  return OpenDropID;
+}
+
+void OpenDrop::set_joy(uint8_t x, uint8_t y)
+{
+  _joy_x = x;
+  _joy_y = y;
+}
+
+void OpenDrop::show_joy(boolean val)
+{
+  _show_joy = val;
+}
+
+void OpenDrop::show_feedback(boolean val)
+{
+  feedback = val;
+}
+
+float OpenDrop::get_Temp_1(void) { return Adapter.get_Temp_1(); };
+float OpenDrop::get_Temp_2(void) { return Adapter.get_Temp_2(); };
+float OpenDrop::get_Temp_3(void) { return Adapter.get_Temp_3(); };
+
+void OpenDrop::set_Temp_1(uint8_t temperature) { Adapter.set_Temp_1(temperature); };
+void OpenDrop::set_Temp_2(uint8_t temperature) { Adapter.set_Temp_2(temperature); };
+void OpenDrop::set_Temp_3(uint8_t temperature) { Adapter.set_Temp_3(temperature); };
+
+uint8_t OpenDrop::get_Temp_L_1(void) { return Adapter.get_Temp_L_1(); };
+uint8_t OpenDrop::get_Temp_H_1(void) { return Adapter.get_Temp_H_1(); };
+uint8_t OpenDrop::get_Temp_L_2(void) { return Adapter.get_Temp_L_2(); };
+uint8_t OpenDrop::get_Temp_H_2(void) { return Adapter.get_Temp_H_2(); };
+uint8_t OpenDrop::get_Temp_L_3(void) { return Adapter.get_Temp_L_3(); };
+uint8_t OpenDrop::get_Temp_H_3(void) { return Adapter.get_Temp_H_3(); };
+
+void Drop::begin(int x, int y)
+{
+  _pos_x = x;
+  _pos_y = y;
+  _next_x = x;
+  _next_y = y;
+  _moving = false;
+}
+
+void Drop::move_right(void)
+{
+
+  if (_pos_x < FluxlPad_width - 2)
+    _next_x = _pos_x + 1;
+  _next_y = _pos_y;
+
+  if ((_pos_x == 14) && (_pos_y == 1))
   {
-    Adapter.set_Magnet(magnet, state);
-  }
-
-  uint8_t OpenDrop::get_ID()
+    _next_x = 15;
+    _next_y = 0;
+  };
+  if ((_pos_x == 15) && (_pos_y == 0))
   {
-    return OpenDropID;
-  }
-
-  void OpenDrop::set_joy(uint8_t x, uint8_t y)
+    _next_x = 15;
+    _next_y = 2;
+  };
+  if ((_pos_x == 15) && (_pos_y == 2))
   {
-    _joy_x = x;
-    _joy_y = y;
-  }
-
-  void OpenDrop::show_joy(boolean val)
+    _next_x = 15;
+    _next_y = 3;
+  };
+  if ((_pos_x == 15) && (_pos_y == 1))
   {
-    _show_joy = val;
-  }
+    _next_x = 15;
+    _next_y = 3;
+  };
 
-  void OpenDrop::show_feedback(boolean val)
+  if ((_pos_x == 14) && (_pos_y == 6))
   {
-    feedback = val;
-  }
-
-  float OpenDrop::get_Temp_1(void) { return Adapter.get_Temp_1(); };
-  float OpenDrop::get_Temp_2(void) { return Adapter.get_Temp_2(); };
-  float OpenDrop::get_Temp_3(void) { return Adapter.get_Temp_3(); };
-
-  void OpenDrop::set_Temp_1(uint8_t temperature) { Adapter.set_Temp_1(temperature); };
-  void OpenDrop::set_Temp_2(uint8_t temperature) { Adapter.set_Temp_2(temperature); };
-  void OpenDrop::set_Temp_3(uint8_t temperature) { Adapter.set_Temp_3(temperature); };
-
-  uint8_t OpenDrop::get_Temp_L_1(void) { return Adapter.get_Temp_L_1(); };
-  uint8_t OpenDrop::get_Temp_H_1(void) { return Adapter.get_Temp_H_1(); };
-  uint8_t OpenDrop::get_Temp_L_2(void) { return Adapter.get_Temp_L_2(); };
-  uint8_t OpenDrop::get_Temp_H_2(void) { return Adapter.get_Temp_H_2(); };
-  uint8_t OpenDrop::get_Temp_L_3(void) { return Adapter.get_Temp_L_3(); };
-  uint8_t OpenDrop::get_Temp_H_3(void) { return Adapter.get_Temp_H_3(); };
-
-  void Drop::begin(int x, int y)
+    _next_x = 15;
+    _next_y = 7;
+  };
+  if ((_pos_x == 15) && (_pos_y == 7))
   {
-    _pos_x = x;
-    _pos_y = y;
-    _next_x = x;
-    _next_y = y;
-    _moving = false;
-  }
-
-  void Drop::move_right(void)
+    _next_x = 15;
+    _next_y = 5;
+  };
+  if ((_pos_x == 15) && (_pos_y == 5))
   {
-
-    if (_pos_x < FluxlPad_width - 2)
-      _next_x = _pos_x + 1;
-    _next_y = _pos_y;
-
-    if ((_pos_x == 14) && (_pos_y == 1))
-    {
-      _next_x = 15;
-      _next_y = 0;
-    };
-    if ((_pos_x == 15) && (_pos_y == 0))
-    {
-      _next_x = 15;
-      _next_y = 2;
-    };
-    if ((_pos_x == 15) && (_pos_y == 2))
-    {
-      _next_x = 15;
-      _next_y = 3;
-    };
-    if ((_pos_x == 15) && (_pos_y == 1))
-    {
-      _next_x = 15;
-      _next_y = 3;
-    };
-
-    if ((_pos_x == 14) && (_pos_y == 6))
-    {
-      _next_x = 15;
-      _next_y = 7;
-    };
-    if ((_pos_x == 15) && (_pos_y == 7))
-    {
-      _next_x = 15;
-      _next_y = 5;
-    };
-    if ((_pos_x == 15) && (_pos_y == 5))
-    {
-      _next_x = 15;
-      _next_y = 4;
-    };
-    if ((_pos_x == 15) && (_pos_y == 6))
-    {
-      _next_x = 15;
-      _next_y = 4;
-    };
-
-    if ((_pos_x == 0) && (_pos_y == 0))
-    {
-      _next_x = 1;
-      _next_y = 1;
-    };
-    if ((_pos_x == 0) && (_pos_y == 2))
-    {
-      _next_x = 0;
-      _next_y = 0;
-    };
-    if ((_pos_x == 0) && (_pos_y == 3))
-    {
-      _next_x = 0;
-      _next_y = 2;
-    };
-    if ((_pos_x == 0) && (_pos_y == 1))
-    {
-      _next_x = 0;
-      _next_y = 0;
-    };
-
-    if ((_pos_x == 0) && (_pos_y == 7))
-    {
-      _next_x = 1;
-      _next_y = 6;
-    };
-    if ((_pos_x == 0) && (_pos_y == 5))
-    {
-      _next_x = 0;
-      _next_y = 7;
-    };
-    if ((_pos_x == 0) && (_pos_y == 4))
-    {
-      _next_x = 0;
-      _next_y = 5;
-    };
-    if ((_pos_x == 0) && (_pos_y == 6))
-    {
-      _next_x = 0;
-      _next_y = 7;
-    };
-
-    _moving = true;
-  }
-
-  void Drop::move_left(void)
+    _next_x = 15;
+    _next_y = 4;
+  };
+  if ((_pos_x == 15) && (_pos_y == 6))
   {
+    _next_x = 15;
+    _next_y = 4;
+  };
 
-    if (_pos_x > 1)
-      _next_x = _pos_x - 1;
-    _next_y = _pos_y;
-
-    if ((_pos_x == 15) && (_pos_y == 0))
-    {
-      _next_x = 14;
-      _next_y = 1;
-    };
-    if ((_pos_x == 15) && (_pos_y == 2))
-    {
-      _next_x = 15;
-      _next_y = 0;
-    };
-    if ((_pos_x == 15) && (_pos_y == 3))
-    {
-      _next_x = 15;
-      _next_y = 2;
-    };
-    if ((_pos_x == 15) && (_pos_y == 1))
-    {
-      _next_x = 15;
-      _next_y = 0;
-    };
-
-    if ((_pos_x == 15) && (_pos_y == 7))
-    {
-      _next_x = 14;
-      _next_y = 6;
-    };
-    if ((_pos_x == 15) && (_pos_y == 5))
-    {
-      _next_x = 15;
-      _next_y = 7;
-    };
-    if ((_pos_x == 15) && (_pos_y == 4))
-    {
-      _next_x = 15;
-      _next_y = 5;
-    };
-    if ((_pos_x == 15) && (_pos_y == 6))
-    {
-      _next_x = 15;
-      _next_y = 7;
-    };
-
-    if ((_pos_x == 1) && (_pos_y == 1))
-    {
-      _next_x = 0;
-      _next_y = 0;
-    };
-    if ((_pos_x == 0) && (_pos_y == 0))
-    {
-      _next_x = 0;
-      _next_y = 2;
-    };
-    if ((_pos_x == 0) && (_pos_y == 2))
-    {
-      _next_x = 0;
-      _next_y = 3;
-    };
-    if ((_pos_x == 0) && (_pos_y == 1))
-    {
-      _next_x = 0;
-      _next_y = 3;
-    };
-
-    if ((_pos_x == 1) && (_pos_y == 6))
-    {
-      _next_x = 0;
-      _next_y = 7;
-    };
-    if ((_pos_x == 0) && (_pos_y == 7))
-    {
-      _next_x = 0;
-      _next_y = 5;
-    };
-    if ((_pos_x == 0) && (_pos_y == 5))
-    {
-      _next_x = 0;
-      _next_y = 4;
-    };
-    if ((_pos_x == 0) && (_pos_y == 6))
-    {
-      _next_x = 0;
-      _next_y = 4;
-    };
-
-    _moving = true;
-  }
-
-  void Drop::move_up(void)
+  if ((_pos_x == 0) && (_pos_y == 0))
   {
-
-    if ((_pos_y > 0) && (_pos_x > 0) && (_pos_x < 15))
-      _next_y = _pos_y - 1;
-    _next_x = _pos_x;
-
-    if ((_pos_x == 15) && (_pos_y == 0))
-    {
-      _next_x = 15;
-      _next_y = 1;
-    };
-    if ((_pos_x == 15) && (_pos_y == 2))
-    {
-      _next_x = 15;
-      _next_y = 1;
-    };
-
-    if ((_pos_x == 15) && (_pos_y == 7))
-    {
-      _next_x = 15;
-      _next_y = 6;
-    };
-    if ((_pos_x == 15) && (_pos_y == 5))
-    {
-      _next_x = 15;
-      _next_y = 6;
-    };
-
-    if ((_pos_x == 0) && (_pos_y == 0))
-    {
-      _next_x = 0;
-      _next_y = 1;
-    };
-    if ((_pos_x == 0) && (_pos_y == 2))
-    {
-      _next_x = 0;
-      _next_y = 1;
-    };
-
-    if ((_pos_x == 0) && (_pos_y == 7))
-    {
-      _next_x = 0;
-      _next_y = 6;
-    };
-    if ((_pos_x == 0) && (_pos_y == 5))
-    {
-      _next_x = 0;
-      _next_y = 6;
-    };
-
-    _moving = true;
-  }
-
-  void Drop::move_down(void)
+    _next_x = 1;
+    _next_y = 1;
+  };
+  if ((_pos_x == 0) && (_pos_y == 2))
   {
+    _next_x = 0;
+    _next_y = 0;
+  };
+  if ((_pos_x == 0) && (_pos_y == 3))
+  {
+    _next_x = 0;
+    _next_y = 2;
+  };
+  if ((_pos_x == 0) && (_pos_y == 1))
+  {
+    _next_x = 0;
+    _next_y = 0;
+  };
 
-    if ((_pos_y < 7) && (_pos_x > 0) && (_pos_x < 15))
-      _next_y = _pos_y + 1;
-    _next_x = _pos_x;
+  if ((_pos_x == 0) && (_pos_y == 7))
+  {
+    _next_x = 1;
+    _next_y = 6;
+  };
+  if ((_pos_x == 0) && (_pos_y == 5))
+  {
+    _next_x = 0;
+    _next_y = 7;
+  };
+  if ((_pos_x == 0) && (_pos_y == 4))
+  {
+    _next_x = 0;
+    _next_y = 5;
+  };
+  if ((_pos_x == 0) && (_pos_y == 6))
+  {
+    _next_x = 0;
+    _next_y = 7;
+  };
 
-    if ((_pos_x == 15) && (_pos_y == 0))
+  _moving = true;
+}
+
+void Drop::move_left(void)
+{
+
+  if (_pos_x > 1)
+    _next_x = _pos_x - 1;
+  _next_y = _pos_y;
+
+  if ((_pos_x == 15) && (_pos_y == 0))
+  {
+    _next_x = 14;
+    _next_y = 1;
+  };
+  if ((_pos_x == 15) && (_pos_y == 2))
+  {
+    _next_x = 15;
+    _next_y = 0;
+  };
+  if ((_pos_x == 15) && (_pos_y == 3))
+  {
+    _next_x = 15;
+    _next_y = 2;
+  };
+  if ((_pos_x == 15) && (_pos_y == 1))
+  {
+    _next_x = 15;
+    _next_y = 0;
+  };
+
+  if ((_pos_x == 15) && (_pos_y == 7))
+  {
+    _next_x = 14;
+    _next_y = 6;
+  };
+  if ((_pos_x == 15) && (_pos_y == 5))
+  {
+    _next_x = 15;
+    _next_y = 7;
+  };
+  if ((_pos_x == 15) && (_pos_y == 4))
+  {
+    _next_x = 15;
+    _next_y = 5;
+  };
+  if ((_pos_x == 15) && (_pos_y == 6))
+  {
+    _next_x = 15;
+    _next_y = 7;
+  };
+
+  if ((_pos_x == 1) && (_pos_y == 1))
+  {
+    _next_x = 0;
+    _next_y = 0;
+  };
+  if ((_pos_x == 0) && (_pos_y == 0))
+  {
+    _next_x = 0;
+    _next_y = 2;
+  };
+  if ((_pos_x == 0) && (_pos_y == 2))
+  {
+    _next_x = 0;
+    _next_y = 3;
+  };
+  if ((_pos_x == 0) && (_pos_y == 1))
+  {
+    _next_x = 0;
+    _next_y = 3;
+  };
+
+  if ((_pos_x == 1) && (_pos_y == 6))
+  {
+    _next_x = 0;
+    _next_y = 7;
+  };
+  if ((_pos_x == 0) && (_pos_y == 7))
+  {
+    _next_x = 0;
+    _next_y = 5;
+  };
+  if ((_pos_x == 0) && (_pos_y == 5))
+  {
+    _next_x = 0;
+    _next_y = 4;
+  };
+  if ((_pos_x == 0) && (_pos_y == 6))
+  {
+    _next_x = 0;
+    _next_y = 4;
+  };
+
+  _moving = true;
+}
+
+void Drop::move_up(void)
+{
+
+  if ((_pos_y > 0) && (_pos_x > 0) && (_pos_x < 15))
+    _next_y = _pos_y - 1;
+  _next_x = _pos_x;
+
+  if ((_pos_x == 15) && (_pos_y == 0))
+  {
+    _next_x = 15;
+    _next_y = 1;
+  };
+  if ((_pos_x == 15) && (_pos_y == 2))
+  {
+    _next_x = 15;
+    _next_y = 1;
+  };
+
+  if ((_pos_x == 15) && (_pos_y == 7))
+  {
+    _next_x = 15;
+    _next_y = 6;
+  };
+  if ((_pos_x == 15) && (_pos_y == 5))
+  {
+    _next_x = 15;
+    _next_y = 6;
+  };
+
+  if ((_pos_x == 0) && (_pos_y == 0))
+  {
+    _next_x = 0;
+    _next_y = 1;
+  };
+  if ((_pos_x == 0) && (_pos_y == 2))
+  {
+    _next_x = 0;
+    _next_y = 1;
+  };
+
+  if ((_pos_x == 0) && (_pos_y == 7))
+  {
+    _next_x = 0;
+    _next_y = 6;
+  };
+  if ((_pos_x == 0) && (_pos_y == 5))
+  {
+    _next_x = 0;
+    _next_y = 6;
+  };
+
+  _moving = true;
+}
+
+void Drop::move_down(void)
+{
+
+  if ((_pos_y < 7) && (_pos_x > 0) && (_pos_x < 15))
+    _next_y = _pos_y + 1;
+  _next_x = _pos_x;
+
+  if ((_pos_x == 15) && (_pos_y == 0))
+  {
+    _next_x = 15;
+    _next_y = 1;
+  };
+  if ((_pos_x == 15) && (_pos_y == 2))
+  {
+    _next_x = 15;
+    _next_y = 1;
+  };
+
+  if ((_pos_x == 15) && (_pos_y == 7))
+  {
+    _next_x = 15;
+    _next_y = 6;
+  };
+  if ((_pos_x == 15) && (_pos_y == 5))
+  {
+    _next_x = 15;
+    _next_y = 6;
+  };
+
+  if ((_pos_x == 0) && (_pos_y == 0))
+  {
+    _next_x = 0;
+    _next_y = 1;
+  };
+  if ((_pos_x == 0) && (_pos_y == 2))
+  {
+    _next_x = 0;
+    _next_y = 1;
+  };
+
+  if ((_pos_x == 0) && (_pos_y == 7))
+  {
+    _next_x = 0;
+    _next_y = 6;
+  };
+  if ((_pos_x == 0) && (_pos_y == 5))
+  {
+    _next_x = 0;
+    _next_y = 6;
+  };
+
+  _moving = true;
+}
+
+int Drop::position_x(void)
+{
+
+  return _pos_x;
+}
+
+int Drop::position_y(void)
+{
+
+  return _pos_y;
+}
+
+int Drop::next_x(void)
+{
+
+  return _next_x;
+}
+
+int Drop::next_y(void)
+{
+
+  return _next_y;
+}
+
+int Drop::goal_x(void)
+{
+
+  return _goal_x;
+}
+
+int Drop::goal_y(void)
+{
+
+  return _goal_y;
+}
+
+int Drop::num(void)
+{
+
+  return _dropnum;
+}
+
+void Drop::go(int x, int y)
+{
+  _goal_x = x;
+  _goal_y = y;
+}
+
+bool Drop::is_moving(void)
+{
+
+  return _moving;
+}
+
+void Menu(OpenDrop &theOpenDrop)
+{
+  int JOY_value;
+  int v = Voltage_set;
+  int f = AC_frequency;
+  int menu_position = 1;
+  bool AC_state = AC_flag;
+  bool confirm = false;
+  bool set_confirm = false;
+  bool set_feedback = feedback;
+  bool set_sound = sound;
+  bool nav_release = true;
+  bool but_release = false;
+
+  display.dim(false);
+
+  while (!confirm)
+  {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE, BLACK);
+    display.setCursor(15, 2);
+    if (AC_state == true)
+      display.print("MODE:     AC");
+    else
+      display.print("MODE:     DC");
+    display.setCursor(15, 12);
+    display.print("VOLTAGE:  ");
+    display.print(v);
+    display.print(" V");
+    display.setCursor(15, 22);
+    display.print("FREQUENCY:");
+    if (f < 1000)
+      display.print(" ");
+    display.print(f);
+    display.print(" Hz");
+    display.setCursor(15, 32);
+    if (set_sound == true)
+      display.print("SOUND:    ON");
+    else
+      display.print("SOUND:    OFF");
+    display.setCursor(15, 42);
+    if (set_feedback == true)
+      display.print("FEEDBACK: ON");
+    else
+      display.print("FEEDBACK: OFF");
+
+    if (!set_confirm)
     {
-      _next_x = 15;
-      _next_y = 1;
-    };
-    if ((_pos_x == 15) && (_pos_y == 2))
+      display.setCursor(15, 55);
+      display.println("SET:      CANCEL");
+    }
+    else
     {
-      _next_x = 15;
-      _next_y = 1;
-    };
+      display.setCursor(15, 55);
+      display.println("SET:      OK");
+    }
 
-    if ((_pos_x == 15) && (_pos_y == 7))
+    display.setCursor(0, 10 * menu_position - 8);
+    if (menu_position == 6)
+      display.setCursor(0, 55);
+    display.print(">");
+    display.display();
+
+    JOY_value = analogRead(JOY_pin);
+
+    if ((JOY_value > 725) && (JOY_value < 895) && (menu_position > 1) && (nav_release))
     {
-      _next_x = 15;
-      _next_y = 6;
-    };
-    if ((_pos_x == 15) && (_pos_y == 5))
+      menu_position--;
+      nav_release = false;
+      set_confirm = false;
+    }
+    if ((JOY_value > 256) && (JOY_value < 597) && (menu_position < 6) && (nav_release))
     {
-      _next_x = 15;
-      _next_y = 6;
-    };
+      menu_position++;
+      nav_release = false;
+    }
+    if (JOY_value > 950)
+      nav_release = true;
+    if (digitalRead(SW1_pin))
+      but_release = true;
+    if (!digitalRead(SW1_pin) && but_release)
+      confirm = true;
 
-    if ((_pos_x == 0) && (_pos_y == 0))
+    switch (menu_position)
     {
-      _next_x = 0;
-      _next_y = 1;
-    };
-    if ((_pos_x == 0) && (_pos_y == 2))
-    {
-      _next_x = 0;
-      _next_y = 1;
-    };
+    case 1:
+      if (JOY_value < 300)
+        AC_state = true;
+      if ((JOY_value > 600) && (JOY_value < 730))
+        AC_state = false;
+      break;
 
-    if ((_pos_x == 0) && (_pos_y == 7))
-    {
-      _next_x = 0;
-      _next_y = 6;
-    };
-    if ((_pos_x == 0) && (_pos_y == 5))
-    {
-      _next_x = 0;
-      _next_y = 6;
-    };
+    case 2:
+      if ((JOY_value > 600) && (JOY_value < 730) && (v > 50))
+        v = v - 10;
+      if ((JOY_value < 300) && (v < 280))
+        v = v + 10;
+      break;
 
-    _moving = true;
-  }
+    case 3:
+      if ((JOY_value > 600) && (JOY_value < 730) && (f > 100))
+        f = f - 50;
+      if ((JOY_value < 300) && (f < 1500))
+        f = f + 50;
 
-  int Drop::position_x(void)
-  {
+      break;
 
-    return _pos_x;
-  }
+    case 4:
+      if (JOY_value < 300)
+        set_sound = false;
+      if ((JOY_value > 600) && (JOY_value < 730))
+        set_sound = true;
 
-  int Drop::position_y(void)
-  {
+      break;
 
-    return _pos_y;
-  }
+    case 5:
+      if (JOY_value < 300)
+        set_feedback = true;
+      if ((JOY_value > 600) && (JOY_value < 730))
+        set_feedback = false;
 
-  int Drop::next_x(void)
-  {
+      break;
 
-    return _next_x;
-  }
-
-  int Drop::next_y(void)
-  {
-
-    return _next_y;
-  }
-
-  int Drop::goal_x(void)
-  {
-
-    return _goal_x;
-  }
-
-  int Drop::goal_y(void)
-  {
-
-    return _goal_y;
-  }
-
-  int Drop::num(void)
-  {
-
-    return _dropnum;
-  }
-
-  void Drop::go(int x, int y)
-  {
-    _goal_x = x;
-    _goal_y = y;
-  }
-
-  bool Drop::is_moving(void)
-  {
-
-    return _moving;
-  }
-
-  void Menu(OpenDrop & theOpenDrop)
-  {
-    int JOY_value;
-    int v = Voltage_set;
-    int f = AC_frequency;
-    int menu_position = 1;
-    bool AC_state = AC_flag;
-    bool confirm = false;
-    bool set_confirm = false;
-    bool set_feedback = feedback;
-    bool set_sound = sound;
-    bool nav_release = true;
-    bool but_release = false;
-
-    display.dim(false);
-
-    while (!confirm)
-    {
-      display.clearDisplay();
-      display.setTextSize(1);
-      display.setTextColor(WHITE, BLACK);
-      display.setCursor(15, 2);
-      if (AC_state == true)
-        display.print("MODE:     AC");
-      else
-        display.print("MODE:     DC");
-      display.setCursor(15, 12);
-      display.print("VOLTAGE:  ");
-      display.print(v);
-      display.print(" V");
-      display.setCursor(15, 22);
-      display.print("FREQUENCY:");
-      if (f < 1000)
-        display.print(" ");
-      display.print(f);
-      display.print(" Hz");
-      display.setCursor(15, 32);
-      if (set_sound == true)
-        display.print("SOUND:    ON");
-      else
-        display.print("SOUND:    OFF");
-      display.setCursor(15, 42);
-      if (set_feedback == true)
-        display.print("FEEDBACK: ON");
-      else
-        display.print("FEEDBACK: OFF");
-
-      if (!set_confirm)
-      {
-        display.setCursor(15, 55);
-        display.println("SET:      CANCEL");
-      }
-      else
-      {
-        display.setCursor(15, 55);
-        display.println("SET:      OK");
-      }
-
-      display.setCursor(0, 10 * menu_position - 8);
-      if (menu_position == 6)
-        display.setCursor(0, 55);
-      display.print(">");
-      display.display();
-
-      JOY_value = analogRead(JOY_pin);
-
-      if ((JOY_value > 725) && (JOY_value < 895) && (menu_position > 1) && (nav_release))
-      {
-        menu_position--;
-        nav_release = false;
+    case 6:
+      if (JOY_value < 300)
+        set_confirm = true;
+      if ((JOY_value > 600) && (JOY_value < 730))
         set_confirm = false;
-      }
-      if ((JOY_value > 256) && (JOY_value < 597) && (menu_position < 6) && (nav_release))
-      {
-        menu_position++;
-        nav_release = false;
-      }
-      if (JOY_value > 950)
-        nav_release = true;
-      if (digitalRead(SW1_pin))
-        but_release = true;
-      if (!digitalRead(SW1_pin) && but_release)
+      if (!digitalRead(SW3_pin))
         confirm = true;
+      break;
 
-      switch (menu_position)
-      {
-      case 1:
-        if (JOY_value < 300)
-          AC_state = true;
-        if ((JOY_value > 600) && (JOY_value < 730))
-          AC_state = false;
-        break;
-
-      case 2:
-        if ((JOY_value > 600) && (JOY_value < 730) && (v > 50))
-          v = v - 10;
-        if ((JOY_value < 300) && (v < 280))
-          v = v + 10;
-        break;
-
-      case 3:
-        if ((JOY_value > 600) && (JOY_value < 730) && (f > 100))
-          f = f - 50;
-        if ((JOY_value < 300) && (f < 1500))
-          f = f + 50;
-
-        break;
-
-      case 4:
-        if (JOY_value < 300)
-          set_sound = false;
-        if ((JOY_value > 600) && (JOY_value < 730))
-          set_sound = true;
-
-        break;
-
-      case 5:
-        if (JOY_value < 300)
-          set_feedback = true;
-        if ((JOY_value > 600) && (JOY_value < 730))
-          set_feedback = false;
-
-        break;
-
-      case 6:
-        if (JOY_value < 300)
-          set_confirm = true;
-        if ((JOY_value > 600) && (JOY_value < 730))
-          set_confirm = false;
-        if (!digitalRead(SW3_pin))
-          confirm = true;
-        break;
-
-        break;
-      default:
-        break;
-      }
+      break;
+    default:
+      break;
     }
-    if (set_confirm)
-    {
-      theOpenDrop.set_voltage(v, AC_state, f);
-      sound = set_sound;
-      feedback = set_feedback;
-      settings.value[0] = AC_state;
-      settings.value[1] = v;
-      settings.value[2] = f;
-      settings.value[3] = set_sound;
-      settings.value[4] = set_feedback;
-      my_flash_store.write(settings);
-
-      HV_set_ok = false;
-    }
-    while (!digitalRead(SW1_pin))
-      ;
   }
+  if (set_confirm)
+  {
+    theOpenDrop.set_voltage(v, AC_state, f);
+    sound = set_sound;
+    feedback = set_feedback;
+    settings.value[0] = AC_state;
+    settings.value[1] = v;
+    settings.value[2] = f;
+    settings.value[3] = set_sound;
+    settings.value[4] = set_feedback;
+    my_flash_store.write(settings);
+
+    HV_set_ok = false;
+  }
+  while (!digitalRead(SW1_pin))
+    ;
+}

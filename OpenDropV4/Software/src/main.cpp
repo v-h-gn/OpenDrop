@@ -1,7 +1,7 @@
-  /*
-  Basic Code to run the OpenDrop V4.1, Research platfrom for digital microfluidics
-  Object codes are defined in the OpenDrop.h library
-  Written by Urs Gaudenz from GaudiLabs, 2021
+/*
+Basic Code to run the OpenDrop V4.1, Research platfrom for digital microfluidics
+Object codes are defined in the OpenDrop.h library
+Written by Urs Gaudenz from GaudiLabs, 2021
 */
 
 #include <SPI.h>
@@ -15,10 +15,24 @@
 
 #include "hardware_def.h"
 
-OpenDrop OpenDropDevice = OpenDrop();
-Drop *myDrop = OpenDropDevice.getDrop();
+#define RESERVOIR_PERIOD 50 // in ticks
+#define JOYSTICK_PERIOD 10  // in ticks
 
-void joystick();
+OpenDrop device = OpenDrop();
+Drop *myDrop = device.getDrop();
+
+enum JoystickAction
+{
+  UP,
+  DOWN,
+  LEFT,
+  RIGHT,
+  HOLD,
+  NONE
+} joystick_state;
+
+void tickJoystick();
+void tickReservoir();
 
 bool FluxCom[16][8];
 bool FluxBack[16][8];
@@ -47,13 +61,13 @@ int j = 0;
 void setup()
 {
   Serial.begin(115200);
-  OpenDropDevice.begin("c10");
+  device.begin("c10");
 
-  ControlBytesOut[23] = OpenDropDevice.get_ID();
-  Serial.println(OpenDropDevice.get_ID());
+  ControlBytesOut[23] = device.get_ID();
+  Serial.println(device.get_ID());
   // OpenDropDevice.set_voltage(240,false,1000);
 
-  OpenDropDevice.set_Fluxels(FluxCom);
+  device.set_Fluxels(FluxCom);
 
   pinMode(JOY_pin, INPUT);
 
@@ -61,12 +75,12 @@ void setup()
   OpenDropAudio.playMe(2);
   delay(2000);
 
-  OpenDropDevice.drive_Fluxels();
-  OpenDropDevice.update_Display();
+  device.drive_Fluxels();
+  device.update_Display();
   Serial.println("Welcome to OpenDrop");
 
   myDrop->begin(7, 4);
-  OpenDropDevice.update();
+  device.update();
 
   del_counter = millis();
 }
@@ -88,54 +102,54 @@ void loop()
     digitalWrite(LED_Rx_pin, HIGH);
     if (x == (FluxlPad_width + 16))
     {
-      OpenDropDevice.set_Fluxels(FluxCom);
-      OpenDropDevice.drive_Fluxels();
-      OpenDropDevice.update_Display();
+      device.set_Fluxels(FluxCom);
+      device.drive_Fluxels();
+      device.update_Display();
 
       if ((ControlBytesIn[0] & 0x2) && (Magnet1_state == false))
       {
         Magnet1_state = true;
-        OpenDropDevice.set_Magnet(0, HIGH);
+        device.set_Magnet(0, HIGH);
       };
 
       if (!(ControlBytesIn[0] & 0x2) && (Magnet1_state == true))
       {
         Magnet1_state = false;
-        OpenDropDevice.set_Magnet(0, LOW);
+        device.set_Magnet(0, LOW);
       };
 
       if ((ControlBytesIn[0] & 0x1) && (Magnet2_state == false))
       {
         Magnet2_state = true;
-        OpenDropDevice.set_Magnet(1, HIGH);
+        device.set_Magnet(1, HIGH);
       };
 
       if (!(ControlBytesIn[0] & 0x1) && (Magnet2_state == true))
       {
         Magnet2_state = false;
-        OpenDropDevice.set_Magnet(1, LOW);
+        device.set_Magnet(1, LOW);
       };
 
       for (int x = 0; x < (FluxlPad_width); x++)
       {
         writebyte = 0;
         for (int y = 0; y < FluxlPad_heigth; y++)
-          writebyte = (writebyte << 1) + (int)OpenDropDevice.get_Fluxel(x, y);
+          writebyte = (writebyte << 1) + (int)device.get_Fluxel(x, y);
         ControlBytesOut[x] = writebyte;
       }
 
-      OpenDropDevice.set_Temp_1(ControlBytesIn[10]);
-      OpenDropDevice.set_Temp_2(ControlBytesIn[11]);
-      OpenDropDevice.set_Temp_3(ControlBytesIn[12]);
+      device.set_Temp_1(ControlBytesIn[10]);
+      device.set_Temp_2(ControlBytesIn[11]);
+      device.set_Temp_3(ControlBytesIn[12]);
 
-      OpenDropDevice.show_feedback(ControlBytesIn[8]);
+      device.show_feedback(ControlBytesIn[8]);
 
-      ControlBytesOut[17] = OpenDropDevice.get_Temp_L_1();
-      ControlBytesOut[18] = OpenDropDevice.get_Temp_H_1();
-      ControlBytesOut[19] = OpenDropDevice.get_Temp_L_2();
-      ControlBytesOut[20] = OpenDropDevice.get_Temp_H_2();
-      ControlBytesOut[21] = OpenDropDevice.get_Temp_L_3();
-      ControlBytesOut[22] = OpenDropDevice.get_Temp_H_3();
+      ControlBytesOut[17] = device.get_Temp_L_1();
+      ControlBytesOut[18] = device.get_Temp_H_1();
+      ControlBytesOut[19] = device.get_Temp_L_2();
+      ControlBytesOut[20] = device.get_Temp_H_2();
+      ControlBytesOut[21] = device.get_Temp_L_3();
+      ControlBytesOut[22] = device.get_Temp_H_3();
 
       for (x = 0; x < 24; x++)
         Serial.write(ControlBytesOut[x]);
@@ -149,7 +163,7 @@ void loop()
   /*del_counter is updating the display every 2000 miliseconds*/
   if (millis() - del_counter > 2000)
   { // update Display
-    OpenDropDevice.update_Display();
+    device.update_Display();
     del_counter = millis();
   }
 
@@ -159,66 +173,15 @@ void loop()
   if (!SWITCH_state) // activate Menu
   {
     OpenDropAudio.playMe(1);
-    Menu(OpenDropDevice);
-    OpenDropDevice.update_Display();
+    Menu(device);
+    device.update_Display();
     del_counter2 = 200;
   }
 
   if (!SWITCH_state2) // activate Reservoirs
   {
-    if ((myDrop->position_x() == 15) && (myDrop->position_y() == 3))
-    {
-      myDrop->begin(14, 1);
-      OpenDropDevice.dispense(1, 1200);
-    }
-    if ((myDrop->position_x() == 15) && (myDrop->position_y() == 4))
-    {
-      myDrop->begin(14, 6);
-      OpenDropDevice.dispense(2, 1200);
-    }
-
-    if ((myDrop->position_x() == 0) && (myDrop->position_y() == 3))
-    {
-      myDrop->begin(1, 1);
-      OpenDropDevice.dispense(3, 1200);
-    }
-    if ((myDrop->position_x() == 0) && (myDrop->position_y() == 4))
-    {
-      myDrop->begin(1, 6);
-      OpenDropDevice.dispense(4, 1200);
-    }
-
-    if ((myDrop->position_x() == 10) && (myDrop->position_y() == 2))
-    {
-      if (Magnet1_state)
-      {
-        OpenDropDevice.set_Magnet(0, LOW);
-        Magnet1_state = false;
-      }
-      else
-      {
-        OpenDropDevice.set_Magnet(0, HIGH);
-        Magnet1_state = true;
-      }
-      while (!digitalRead(SW2_pin))
-        ;
-    }
-
-    if ((myDrop->position_x() == 5) && (myDrop->position_y() == 2))
-    {
-      if (Magnet2_state)
-      {
-        OpenDropDevice.set_Magnet(1, LOW);
-        Magnet2_state = false;
-      }
-      else
-      {
-        OpenDropDevice.set_Magnet(1, HIGH);
-        Magnet2_state = true;
-      }
-      while (!digitalRead(SW2_pin))
-        ;
-    }
+    tickReservoir(0);
+    magnet(0);
   }
 
   JOY_value = analogRead(JOY_pin); // navigate using Joystick
@@ -228,12 +191,12 @@ void loop()
   Serial.println(del_counter);
   Serial.println("del_counter2:");
   Serial.println(del_counter2);
-  
-  joystick();
 
-  OpenDropDevice.update_Drops();
-  OpenDropDevice.update();
-   
+  tickJoystick();
+
+  device.update_Drops();
+  device.update();
+
   if (JOY_value > 950)
   {
     del_counter2 = 0;
@@ -244,24 +207,13 @@ void loop()
 
 } // main loop
 
-// Call joystick values for other functions
-enum JoystickDIR
-{
-  UP,
-  DOWN,
-  LEFT,
-  RIGHT,
-  HOLD,
-  NONE
-} joystick_state;
-
-void joystick()
+void tickJoystick()
 {
   JOY_value = analogRead(JOY_pin); // navigate using Joystick
-
-  // If someone intentionally moves the joystick 
-  if ((JOY_value < 950) & (del_counter2 == 0))
+  // If someone intentionally moves the joystick
+  if ((JOY_value < 950))
   {
+    // state transition per the value of the analog read
     if ((JOY_value > 725))
     {
       joystick_state = UP;
@@ -278,58 +230,97 @@ void joystick()
     {
       joystick_state = RIGHT;
     }
-
-    switch(joystick_state)
+    // take action based on new state
+    switch (joystick_state)
     {
-      case RIGHT:
-        Serial.println("Right");
-        break;
-      case UP:
-        Serial.println("Up");
-        break;
-      case LEFT:
-        Serial.println("Left");
-        break;
-      case DOWN:
-        Serial.println("Down");
-        break;
-      default:
-        break;
+    case RIGHT:
+      Serial.println("Right");
+      myDrop->move_right();
+      break;
+    case UP:
+      Serial.println("Up");
+      myDrop->move_up();
+      break;
+    case LEFT:
+      Serial.println("Left");
+      myDrop->move_left();
+      break;
+    case DOWN:
+      Serial.println("Down");
+      myDrop->move_down();
+      break;
+    default:
+      break;
     }
+  }
+  // return to the hold position.
+  joystick_state = HOLD;
+}
 
-    switch(joystick_state)
+void tickReservoir(uint8_t tick)
+{
+  if (tick % RESERVOIR_PERIOD != 0)
+    return;
+
+  if ((myDrop->position_x() == 15) && (myDrop->position_y() == 3))
+  {
+    myDrop->begin(14, 1);
+    device.dispense(1, 1200);
+  }
+  if ((myDrop->position_x() == 15) && (myDrop->position_y() == 4))
+  {
+    myDrop->begin(14, 6);
+    device.dispense(2, 1200);
+  }
+
+  if ((myDrop->position_x() == 0) && (myDrop->position_y() == 3))
+  {
+    myDrop->begin(1, 1);
+    device.dispense(3, 1200);
+  }
+  if ((myDrop->position_x() == 0) && (myDrop->position_y() == 4))
+  {
+    myDrop->begin(1, 6);
+    device.dispense(4, 1200);
+  }
+
+  device.top_left_reservoir.updateState();
+  device.top_right_reservoir.updateState();
+  device.bottom_left_reservoir.updateState();
+  device.bottom_right_reservoir.updateState();
+}
+
+void magnet(uint8_t tick)
+{
+  if ((myDrop->position_x() == 10) && (myDrop->position_y() == 2))
+  {
+    if (Magnet1_state)
     {
-      case RIGHT:
-        myDrop->move_right();
-        joystick_state = HOLD;
-        break;
-      case UP:
-        myDrop->move_up();
-        joystick_state = HOLD;
-
-        break;
-      case LEFT:
-        myDrop->move_left();
-        joystick_state = HOLD;
-
-        break;
-      case DOWN:
-        myDrop->move_down();
-        joystick_state = HOLD;
-
-        break;
-      case HOLD:
-        if ((JOY_value > 725)||(JOY_value > 597)||(JOY_value > 256)||(JOY_value > 100))
-    {
-      joystick_state = HOLD;
+      device.set_Magnet(0, LOW);
+      Magnet1_state = false;
     }
     else
     {
-      break;
+      device.set_Magnet(0, HIGH);
+      Magnet1_state = true;
     }
+    while (!digitalRead(SW2_pin))
+      ;
+  }
 
-      default:
-        break;
+  if ((myDrop->position_x() == 5) && (myDrop->position_y() == 2))
+  {
+    if (Magnet2_state)
+    {
+      device.set_Magnet(1, LOW);
+      Magnet2_state = false;
     }
+    else
+    {
+      device.set_Magnet(1, HIGH);
+      Magnet2_state = true;
+    }
+    while (!digitalRead(SW2_pin))
+      ;
   }
 }
