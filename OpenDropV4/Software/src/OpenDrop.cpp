@@ -892,6 +892,8 @@ Position Reservoir::getDispenseAnimationPosition(int droplet)
       return {0, 4};
     else
       return {-1, -1}; // Invalid reservoir
+      break;
+
   case STEP_2:
     if (reservoir == TOP_RIGHT)
       return {15, 4};
@@ -903,6 +905,8 @@ Position Reservoir::getDispenseAnimationPosition(int droplet)
       return {0, 5};
     else
       return {-1, -1}; // Invalid reservoir
+    break;
+
   case STEP_3:
     if (reservoir == TOP_RIGHT)
     {
@@ -936,6 +940,8 @@ Position Reservoir::getDispenseAnimationPosition(int droplet)
     {
       return {-1, -1}; // Invalid reservoir
     }
+    break;
+
   case STEP_4:
     if (reservoir == TOP_RIGHT)
     {
@@ -957,6 +963,8 @@ Position Reservoir::getDispenseAnimationPosition(int droplet)
     {
       return {-1, -1}; // Invalid reservoir
     }
+    break;
+
   case STEP_5:
     if (reservoir == TOP_RIGHT)
     {
@@ -990,6 +998,8 @@ Position Reservoir::getDispenseAnimationPosition(int droplet)
     {
       return {-1, -1}; // Invalid reservoir
     }
+    break;
+
   case STEP_6:
     if (reservoir == TOP_RIGHT)
       return {15, 3};
@@ -1001,6 +1011,7 @@ Position Reservoir::getDispenseAnimationPosition(int droplet)
       return {0, 4};
     else
       return {-1, -1}; // Invalid reservoir
+      break;
   }
 };
 

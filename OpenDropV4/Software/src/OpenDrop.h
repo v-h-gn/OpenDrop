@@ -108,6 +108,7 @@ public:
   void drive_Fluxels(void);
   void read_Fluxels(void);
   void set_joy(uint8_t x, uint8_t y);
+  Position get_joy(uint8_t &x, uint8_t &y);
   void show_joy(boolean val);
   void show_feedback(boolean val);
   void set_voltage(uint16_t voltage, bool AC_on, uint16_t frequence);
@@ -138,8 +139,7 @@ private:
   Drop drops[max_drops];
   uint8_t drop_count = 0;
   int _runing;
-  uint8_t _joy_x;
-  uint8_t _joy_y;
+  Position _joy;
   bool _show_joy;
   //  PWM _pwm;
 };

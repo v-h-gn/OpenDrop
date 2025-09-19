@@ -34,8 +34,8 @@ int x,y;
 int del_counter=0;
 int del_counter2=0;
 
-bool SWITCH_state=true;
-bool SWITCH_state2=true;
+bool SWITCH1=true;
+bool SWITCH2=true;
 bool idle=true;
 
 bool Magnet1_state=false;
@@ -139,10 +139,10 @@ void loop() {
        del_counter=millis();
        }
 
-  SWITCH_state=digitalRead(SW1_pin);
-  SWITCH_state2=digitalRead(SW2_pin);
+  SWITCH1=digitalRead(SW1_pin);
+  SWITCH2=digitalRead(SW2_pin);
   
-  if (!SWITCH_state)                    //activate Menu
+  if (!SWITCH1)                    //activate Menu
     { 
      OpenDropAudio.playMe(1);
      Menu(OpenDropDevice);
@@ -151,7 +151,7 @@ void loop() {
      }
 
   
-  if (!SWITCH_state2)                    //activate Reservoirs
+  if (!SWITCH2)                    //activate Reservoirs
     { 
      if ((myDrop->position_x()==15)&&(myDrop->position_y()==3))
     {myDrop->begin(14,1);OpenDropDevice.dispense(1,1200);}

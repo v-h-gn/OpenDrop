@@ -18,8 +18,12 @@ Written by Urs Gaudenz from GaudiLabs, 2021
 #define RESERVOIR_PERIOD 50 // in ticks
 #define JOYSTICK_PERIOD 10  // in ticks
 
+#define NUM_RESERVOIRS 4
+
 OpenDrop device = OpenDrop();
 Drop *myDrop = device.getDrop();
+
+Drop *dispensed_droplet_array[NUM_RESERVOIRS];
 
 enum JoystickAction
 {
@@ -45,11 +49,9 @@ int writebyte;
 int JOY_value;
 int joy_x, joy_y;
 int x, y;
-int del_counter = 0;
-int del_counter2 = 0;
 
-bool SWITCH_state = true;
-bool SWITCH_state2 = true;
+bool SWITCH1 = true;
+bool SWITCH2 = true;
 bool idle = true;
 
 bool Magnet1_state = false;
@@ -80,11 +82,17 @@ void setup()
   Serial.println("Welcome to OpenDrop");
 
   myDrop->begin(7, 4);
+
+    for (int i = 0; i < NUM_RESERVOIRS; i++)
+    {
+      dispensed_droplet_array[i] = device.getDrop();
+    }
+
   device.update();
 
-  del_counter = millis();
 }
 
+int tick = 0;
 /*Left is 680, Right is 0, Down is 510, Up is 720, Default is 1023 */
 void loop()
 {
@@ -158,52 +166,38 @@ void loop()
   }
   else
     digitalWrite(LED_Rx_pin, LOW);
-  del_counter--;
 
   /*del_counter is updating the display every 2000 miliseconds*/
-  if (millis() - del_counter > 2000)
+  if (tick % 2000 == 0)
   { // update Display
     device.update_Display();
-    del_counter = millis();
   }
 
-  SWITCH_state = digitalRead(SW1_pin);
-  SWITCH_state2 = digitalRead(SW2_pin);
+  SWITCH1 = digitalRead(SW1_pin);
+  SWITCH2 = digitalRead(SW2_pin);
 
-  if (!SWITCH_state) // activate Menu
+  if (!SWITCH1) // activate Menu
   {
     OpenDropAudio.playMe(1);
     Menu(device);
     device.update_Display();
-    del_counter2 = 200;
+  
   }
 
-  if (!SWITCH_state2) // activate Reservoirs
+  if (!SWITCH2) // activate Reservoirs
   {
-    tickReservoir(0);
-    magnet(0);
+    tickReservoir(tick);
+    magnet(tick);
   }
 
   JOY_value = analogRead(JOY_pin); // navigate using Joystick
-
-  Serial.println(JOY_value);
-  Serial.println("del_counter:");
-  Serial.println(del_counter);
-  Serial.println("del_counter2:");
-  Serial.println(del_counter2);
 
   tickJoystick();
 
   device.update_Drops();
   device.update();
 
-  if (JOY_value > 950)
-  {
-    del_counter2 = 0;
-    idle = true;
-  }
-  if (del_counter2 > 0)
-    del_counter2--;
+  tick++;
 
 } // main loop
 
@@ -236,6 +230,8 @@ void tickJoystick()
     case RIGHT:
       Serial.println("Right");
       myDrop->move_right();
+      device.get_joy
+
       break;
     case UP:
       Serial.println("Up");
@@ -257,8 +253,11 @@ void tickJoystick()
   joystick_state = HOLD;
 }
 
+
+
 void tickReservoir(uint8_t tick)
 {
+
   if (tick % RESERVOIR_PERIOD != 0)
     return;
 
