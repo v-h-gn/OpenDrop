@@ -54,6 +54,7 @@ bool SWITCH1 = true;
 bool SWITCH2 = true;
 bool idle = true;
 
+//remove?
 bool Magnet1_state = false;
 bool Magnet2_state = false;
 
@@ -225,25 +226,36 @@ void tickJoystick()
       joystick_state = RIGHT;
     }
     // take action based on new state
-    switch (joystick_state)
+    Position temp = device.get_joy();
+
+
+    switch (joystick_state) 
     {
     case RIGHT:
       Serial.println("Right");
       myDrop->move_right();
-      device.get_joy
+
+      device.set_joy(temp.x + 1, temp.y);
 
       break;
     case UP:
       Serial.println("Up");
       myDrop->move_up();
+
+      device.set_joy(temp.x, temp.y - 1);
+
       break;
     case LEFT:
       Serial.println("Left");
       myDrop->move_left();
+
+      device.set_joy(temp.x - 1, temp.y);
       break;
     case DOWN:
       Serial.println("Down");
       myDrop->move_down();
+
+      device.set_joy(temp.x, temp.y + 1);      
       break;
     default:
       break;
@@ -253,7 +265,7 @@ void tickJoystick()
   joystick_state = HOLD;
 }
 
-
+Position loc;
 
 void tickReservoir(uint8_t tick)
 {
@@ -261,23 +273,27 @@ void tickReservoir(uint8_t tick)
   if (tick % RESERVOIR_PERIOD != 0)
     return;
 
-  if ((myDrop->position_x() == 15) && (myDrop->position_y() == 3))
+    if ((loc == Position{15, 0}))
   {
     myDrop->begin(14, 1);
     device.dispense(1, 1200);
   }
-  if ((myDrop->position_x() == 15) && (myDrop->position_y() == 4))
+    if ((loc == Position{15, 3}))
+  {
+    myDrop->begin(14, 1);
+    device.dispense(1, 1200);
+  }
+   if ((loc == Position{15, 4}))
   {
     myDrop->begin(14, 6);
     device.dispense(2, 1200);
   }
-
-  if ((myDrop->position_x() == 0) && (myDrop->position_y() == 3))
+   if ((loc == Position{0, 3}))
   {
     myDrop->begin(1, 1);
     device.dispense(3, 1200);
   }
-  if ((myDrop->position_x() == 0) && (myDrop->position_y() == 4))
+   if ((loc == Position{0, 4}))
   {
     myDrop->begin(1, 6);
     device.dispense(4, 1200);
@@ -289,37 +305,20 @@ void tickReservoir(uint8_t tick)
   device.bottom_right_reservoir.updateState();
 }
 
+
+
 void magnet(uint8_t tick)
 {
-  if ((myDrop->position_x() == 10) && (myDrop->position_y() == 2))
+  if ((loc == Position{10, 2}))
   {
-    if (Magnet1_state)
-    {
-      device.set_Magnet(0, LOW);
-      Magnet1_state = false;
-    }
-    else
-    {
-      device.set_Magnet(0, HIGH);
-      Magnet1_state = true;
-    }
-    while (!digitalRead(SW2_pin))
-      ;
+    device.toggle_Magnet(0);
+
+    while (!digitalRead(SW2_pin));
   }
 
-  if ((myDrop->position_x() == 5) && (myDrop->position_y() == 2))
+  if ((loc == Position{5, 2}))
   {
-    if (Magnet2_state)
-    {
-      device.set_Magnet(1, LOW);
-      Magnet2_state = false;
-    }
-    else
-    {
-      device.set_Magnet(1, HIGH);
-      Magnet2_state = true;
-    }
-    while (!digitalRead(SW2_pin))
-      ;
+    device.toggle_Magnet(0);
+    while (!digitalRead(SW2_pin));
   }
 }

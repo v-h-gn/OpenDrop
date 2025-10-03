@@ -486,7 +486,7 @@ void OpenDrop::update_Display(void) // Updated Display with Fluxls data
 
   // draw cursor
   if (_show_joy)
-    display.drawRect(_joy_x * 6 + 17, _joy_y * 6 + 17, 5, 3, 1);
+    display.drawRect(_joy.x * 6 + 17, _joy.y * 6 + 17, 5, 3, 1);
 
   // draw Rect
 
@@ -1167,6 +1167,12 @@ void OpenDrop::set_voltage(uint16_t voltage, bool AC_on, uint16_t frequence)
   AC_flag = AC_on;
 }
 
+void OpenDrop::toggle_Magnet(uint8_t magnet)
+{
+ 
+  set_Magnet(magnet, magnets[magnet].toggle());
+}
+
 void OpenDrop::set_Magnet(uint8_t magnet, bool state)
 {
   Adapter.set_Magnet(magnet, state);
@@ -1177,10 +1183,11 @@ uint8_t OpenDrop::get_ID()
   return OpenDropID;
 }
 
+//remove?
 void OpenDrop::set_joy(uint8_t x, uint8_t y)
 {
-  _joy_x = x;
-  _joy_y = y;
+  _joy.x = x;
+  _joy.y = y;
 }
 
 void OpenDrop::show_joy(boolean val)

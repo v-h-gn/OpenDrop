@@ -492,5 +492,15 @@ if ((ADC->RESULT.reg)>50) {
 return adapterID;
 
   }
+  /*
+  The adapter address checks whether there is a transmission between two addresses.
+  If the first adresss is successful it adds 1
+
+  0x00 -> 0x01 (0001)
+
+  If the second one is valid, it adds 2 
+  0x00->0x03 (0011)
+
+  */
 
 
