@@ -83,6 +83,7 @@ private:
   bool _moving;
 };
 
+//STATE
 enum DispenseState
 {
   UPDATE,
@@ -105,6 +106,7 @@ struct Position
   }
 };
 
+//STATE
 class Reservoir
 {
 public:

@@ -95,6 +95,7 @@ void setup()
 
 int tick = 0;
 /*Left is 680, Right is 0, Down is 510, Up is 720, Default is 1023 */
+//State?
 void loop()
 {
   delay(500);
@@ -202,6 +203,7 @@ void loop()
 
 } // main loop
 
+//STATE<
 void tickJoystick()
 {
   JOY_value = analogRead(JOY_pin); // navigate using Joystick
@@ -262,7 +264,7 @@ void tickJoystick()
     }
   }
   // return to the hold position.
-  joystick_state = HOLD;
+  joystick_state = HOLD; //is this needed?
 }
 
 Position loc;
@@ -306,7 +308,7 @@ void tickReservoir(uint8_t tick)
 }
 
 
-
+//STATE? Could turn into a state
 void magnet(uint8_t tick)
 {
   if ((loc == Position{10, 2}))

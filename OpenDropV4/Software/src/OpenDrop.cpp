@@ -62,6 +62,7 @@ enum Direction
   RIGHT
 };
 
+//STATE?
 //********** Interupt Functions **********
 
 // this function gets called by the interrupt at <sampleRate>Hertz
@@ -1577,8 +1578,8 @@ bool Drop::is_moving(void)
 void Menu(OpenDrop &theOpenDrop)
 {
   int JOY_value;
-  int v = Voltage_set;
-  int f = AC_frequency;
+  int voltage = Voltage_set;
+  int frequency = AC_frequency;
   int menu_position = 1;
   bool AC_state = AC_flag;
   bool confirm = false;
@@ -1602,13 +1603,13 @@ void Menu(OpenDrop &theOpenDrop)
       display.print("MODE:     DC");
     display.setCursor(15, 12);
     display.print("VOLTAGE:  ");
-    display.print(v);
+    display.print(voltage);
     display.print(" V");
     display.setCursor(15, 22);
     display.print("FREQUENCY:");
-    if (f < 1000)
+    if (frequency < 1000)
       display.print(" ");
-    display.print(f);
+    display.print(frequency);
     display.print(" Hz");
     display.setCursor(15, 32);
     if (set_sound == true)
@@ -1668,17 +1669,17 @@ void Menu(OpenDrop &theOpenDrop)
       break;
 
     case 2:
-      if ((JOY_value > 600) && (JOY_value < 730) && (v > 50))
-        v = v - 10;
-      if ((JOY_value < 300) && (v < 280))
-        v = v + 10;
+      if ((JOY_value > 600) && (JOY_value < 730) && (voltage > 50))
+        voltage = voltage - 10;
+      if ((JOY_value < 300) && (voltage < 280))
+        voltage = voltage + 10;
       break;
 
     case 3:
-      if ((JOY_value > 600) && (JOY_value < 730) && (f > 100))
-        f = f - 50;
-      if ((JOY_value < 300) && (f < 1500))
-        f = f + 50;
+      if ((JOY_value > 600) && (JOY_value < 730) && (frequency > 100))
+        frequency = frequency - 50;
+      if ((JOY_value < 300) && (frequency < 1500))
+        frequency = frequency + 50;
 
       break;
 
@@ -1714,12 +1715,12 @@ void Menu(OpenDrop &theOpenDrop)
   }
   if (set_confirm)
   {
-    theOpenDrop.set_voltage(v, AC_state, f);
+    theOpenDrop.set_voltage(voltage, AC_state, frequency);
     sound = set_sound;
     feedback = set_feedback;
     settings.value[0] = AC_state;
-    settings.value[1] = v;
-    settings.value[2] = f;
+    settings.value[1] = voltage;
+    settings.value[2] = frequency;
     settings.value[3] = set_sound;
     settings.value[4] = set_feedback;
     my_flash_store.write(settings);
