@@ -5,6 +5,7 @@
 *.bak
 *.bck
 *.kicad_pcb-bak
+*.kicad_mod
 *~
 _autosave-*
 *.tmp
@@ -21,3 +22,10 @@ _autosave-*
 
 KiCadLibrary/*
 KiCadLibrary/*
+.pio
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
+
+build/
