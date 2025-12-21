@@ -580,6 +580,46 @@ void OpenDrop::drive_Fluxels(void) // Fill the chip with Fluxls array data
     delayMicroseconds(chip_delay);
   };
 
+const byte pad_lookup[64][2] PROGMEM = {
+  {0,0},{0,2},{0,4},{0,6},{1,0},{1,2},{1,4},{1,6},
+  {2,0},{2,2},{2,4},{2,6},{3,0},{3,2},{3,4},{3,6},
+  {4,0},{4,2},{4,4},{4,6},{5,0},{5,2},{5,4},{5,6},
+  {6,0},{6,2},{6,4},{6,6},{7,0},{7,2},{7,4},{8,2},
+  {8,1},{8,0},{7,3},{7,1},{6,7},{6,5},{6,3},{6,1},
+  {5,7},{5,5},{5,3},{5,1},{4,7},{4,5},{4,3},{4,1},
+  {3,7},{3,5},{3,3},{3,1},{2,7},{2,5},{2,3},{2,1},
+  {1,7},{1,5},{1,3},{1,1},{0,7},{0,5},{0,3},{0,1}
+};
+
+
+
+
+
+//    const byte pad_lookup_x [64] PROGMEM = {
+// 0,0,0,0,1,1,1,1,
+// 2,2,2,2,3,3,3,3,
+// 4,4,4,4,5,5,5,5,
+// 6,6,6,6,7,7,7,8,
+// 8,8,7,7,6,6,6,6,
+// 5,5,5,5,4,4,4,4,
+// 3,3,3,3,2,2,2,2,
+// 1,1,1,1,0,0,0,0
+// };
+
+
+
+// const byte pad_lookup_y [64] PROGMEM = {
+// 0,2,4,6,0,2,4,6,
+// 0,2,4,6,0,2,4,6,
+// 0,2,4,6,0,2,4,6,
+// 0,2,4,6,0,2,4,2,
+// 1,0,3,1,7,5,3,1,
+// 7,5,3,1,7,5,3,1,
+// 7,5,3,1,7,5,3,1,
+// 7,5,3,1,7,5,3,1
+// };
+
+
   for (int i = 0; i < 64; i++)
   {
     digitalWrite(DI_pin, Fluxls[15 - pgm_read_byte_near(pad_lookup_x + i)][7 - pgm_read_byte_near(pad_lookup_y + i)]);
@@ -590,6 +630,14 @@ void OpenDrop::drive_Fluxels(void) // Fill the chip with Fluxls array data
     digitalWrite(CLK_pin, opto_LOW);
     delayMicroseconds(chip_delay);
   };
+
+  /*
+  It is 128 in total, the program does half of the elctron activations in the 
+  1st loop and the other half in the second loop.
+
+  The 2nd loop is indexing in reverse.
+  
+  */
 
   digitalWrite(LE_pin, opto_HIGH);
   delayMicroseconds(chip_delay);
@@ -858,7 +906,20 @@ void OpenDrop::update(void)
 
 int count = 0;
 
+Magnet *OpenDrop::getMagnet(){
+
+  if(this->magCount + 1 > max_magnets) {
+
+    return NULL;
+  }
+
+  this->magCount++;
+  
+  return &magnets[this->magCount -1];
+}
+
 DispenseState dispenseState;
+
 
 void OpenDrop::dispense(Reservoir reservoir, int delay_us)
 {
@@ -1135,7 +1196,7 @@ bool OpenDrop::run(void)
   return transition;
 };
 
-Drop *OpenDrop::getDrop() // @todo rewrite the GetDrop function
+Drop *OpenDrop::getDrop()
 {
   uint8_t num = this->drop_count;
   num++;
