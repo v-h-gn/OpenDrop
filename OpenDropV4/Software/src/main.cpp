@@ -35,8 +35,10 @@ enum JoystickAction
   NONE
 } joystick_state;
 
-void tickJoystick();
-void tickReservoir();
+void tickJoystick(uint8_t tick);
+void tickDispense(uint8_t tick);
+void tickMagnet(uint8_t tick);
+void tickSerial(uint8_t tick);
 
 bool FluxCom[16][8];
 bool FluxBack[16][8];
@@ -46,8 +48,6 @@ int ControlBytesOut[24];
 int readbyte;
 int writebyte;
 
-int JOY_value;
-int joy_x, joy_y;
 int x, y;
 
 bool SWITCH1 = true;
@@ -58,9 +58,7 @@ bool idle = true;
 bool Magnet1_state = false;
 bool Magnet2_state = false;
 
-int j = 0;
 
-// the setup function runs once when you press reset or power the board
 void setup()
 {
   Serial.begin(115200);
@@ -72,33 +70,170 @@ void setup()
 
   device.set_Fluxels(FluxCom);
 
+  // Initialize Joystick pin to be an input
   pinMode(JOY_pin, INPUT);
 
   OpenDropAudio.begin(16000);
   OpenDropAudio.playMe(2);
+  
+  
   delay(2000);
 
   device.drive_Fluxels();
   device.update_Display();
   Serial.println("Welcome to OpenDrop");
 
-  myDrop->begin(7, 4);
+  myDrop->begin(Position{7,4});
 
-    for (int i = 0; i < NUM_RESERVOIRS; i++)
-    {
-      dispensed_droplet_array[i] = device.getDrop();
-    }
+  for (int i = 0; i < NUM_RESERVOIRS; i++)
+  {
+    dispensed_droplet_array[i] = device.getDrop();
+  }
 
   device.update();
 
 }
 
-int tick = 0;
-/*Left is 680, Right is 0, Down is 510, Up is 720, Default is 1023 */
-//State?
+
+uint32_t tick = 0;
+
 void loop()
 {
   delay(500);
+
+  SWITCH1 = digitalRead(SW1_pin);
+  SWITCH2 = digitalRead(SW2_pin);
+
+  if (!SWITCH1) // activate Menu
+  {
+    OpenDropAudio.playMe(1);
+    Menu(device);
+    device.update_Display();
+  
+  }
+
+  if (!SWITCH2) // activate Reservoirs
+  {
+    tickDispense(tick);
+    tickMagnet(tick);
+  }
+
+  tickJoystick(tick);
+
+  device.update_Drops();
+  device.update();
+
+  tick++;
+} 
+
+
+void tickJoystick(uint8_t tick)
+{
+  uint32_t JOY_value = analogRead(JOY_pin); // navigate using Joystick
+  // If someone intentionally moves the joystick
+  if ((JOY_value < 950))
+  {
+    // state transition per the value of the analog read
+    if ((JOY_value > 725))
+    {
+      joystick_state = UP;
+    }
+    else if ((JOY_value > 597))
+    {
+      joystick_state = LEFT;
+    }
+    else if ((JOY_value > 256))
+    {
+      joystick_state = DOWN;
+    }
+    else
+    {
+      joystick_state = RIGHT;
+    }
+
+    switch (joystick_state) 
+    {
+    case RIGHT:
+      Serial.println("Right");
+      myDrop->move_right();
+      device.set_joy(myDrop->pos().x, myDrop->pos().y);
+      break;
+    case UP:
+      Serial.println("Up");
+      myDrop->move_up();
+      device.set_joy(myDrop->pos().x, myDrop->pos().y);
+      break;
+    case LEFT:
+      Serial.println("Left");
+      myDrop->move_left();
+      device.set_joy(myDrop->pos().x, myDrop->pos().y);
+      break;
+    case DOWN:
+      Serial.println("Down");
+      myDrop->move_down();
+      device.set_joy(myDrop->pos().x, myDrop->pos().y);      
+      break;
+    default:
+      break;
+    }
+  }
+  // Return to hold position so if user releases joystick, it doesn't keep moving in the last direction
+  joystick_state = HOLD; 
+}
+
+void tickDispense(uint8_t tick)
+{
+
+  if (tick % RESERVOIR_PERIOD != 0)
+    return;
+
+  if ((myDrop->pos() == Position{15, 3}))
+  {
+    myDrop->begin(Position{14, 1});
+    device.dispense(1, 1200);
+  }
+  if ((myDrop->pos() == Position{15, 4}))
+  {
+    myDrop->begin(Position{14, 6});
+    device.dispense(2, 1200);
+  }
+  if ((myDrop->pos() == Position{0, 3}))
+  {
+    myDrop->begin(Position{1, 1});
+    device.dispense(3, 1200);
+  }
+  if ((myDrop->pos()  == Position{0, 4}))
+  {
+    myDrop->begin(Position{1, 6});
+    device.dispense(4, 1200);
+  }
+
+  device.top_left_reservoir.updateState();
+  device.top_right_reservoir.updateState();
+  device.bottom_left_reservoir.updateState();
+  device.bottom_right_reservoir.updateState();
+}
+
+
+//STATE? Could turn into a state
+void tickMagnet(uint8_t tick)
+{
+  if ((myDrop->pos() == Position{10, 2}))
+  {
+    device.toggle_Magnet(0);
+
+    while (!digitalRead(SW2_pin));
+  }
+
+  if ((myDrop->pos() == Position{5, 2}))
+  {
+    device.toggle_Magnet(0);
+    while (!digitalRead(SW2_pin));
+  }
+}
+
+void tickSerial(uint8_t tick)
+{
   if (Serial.available() > 0) // receive data from App
   {
     readbyte = Serial.read();
@@ -169,158 +304,4 @@ void loop()
   else
     digitalWrite(LED_Rx_pin, LOW);
 
-  /*del_counter is updating the display every 2000 miliseconds*/
-  if (tick % 2000 == 0)
-  { // update Display
-    device.update_Display();
-  }
-
-  SWITCH1 = digitalRead(SW1_pin);
-  SWITCH2 = digitalRead(SW2_pin);
-
-  if (!SWITCH1) // activate Menu
-  {
-    OpenDropAudio.playMe(1);
-    Menu(device);
-    device.update_Display();
-  
-  }
-
-  if (!SWITCH2) // activate Reservoirs
-  {
-    tickReservoir(tick);
-    magnet(tick);
-  }
-
-  JOY_value = analogRead(JOY_pin); // navigate using Joystick
-
-  tickJoystick();
-
-  device.update_Drops();
-  device.update();
-
-  tick++;
-
-} // main loop
-
-//STATE<
-void tickJoystick()
-{
-  JOY_value = analogRead(JOY_pin); // navigate using Joystick
-  // If someone intentionally moves the joystick
-  if ((JOY_value < 950))
-  {
-    // state transition per the value of the analog read
-    if ((JOY_value > 725))
-    {
-      joystick_state = UP;
-    }
-    else if ((JOY_value > 597))
-    {
-      joystick_state = LEFT;
-    }
-    else if ((JOY_value > 256))
-    {
-      joystick_state = DOWN;
-    }
-    else
-    {
-      joystick_state = RIGHT;
-    }
-    // take action based on new state
-    Position temp = device.get_joy();
-
-
-    switch (joystick_state) 
-    {
-    case RIGHT:
-      Serial.println("Right");
-      myDrop->move_right();
-
-      device.set_joy(temp.x + 1, temp.y);
-
-      break;
-    case UP:
-      Serial.println("Up");
-      myDrop->move_up();
-
-      device.set_joy(temp.x, temp.y - 1);
-
-      break;
-    case LEFT:
-      Serial.println("Left");
-      myDrop->move_left();
-
-      device.set_joy(temp.x - 1, temp.y);
-      break;
-    case DOWN:
-      Serial.println("Down");
-      myDrop->move_down();
-
-      device.set_joy(temp.x, temp.y + 1);      
-      break;
-    default:
-      break;
-    }
-  }
-  // return to the hold position.
-  joystick_state = HOLD; //is this needed?
-}
-
-Position loc;
-
-void tickReservoir(uint8_t tick)
-{
-
-  if (tick % RESERVOIR_PERIOD != 0)
-    return;
-
-    if ((loc == Position{15, 0}))
-  {
-    myDrop->begin(14, 1);
-    device.dispense(1, 1200);
-  }
-    if ((loc == Position{15, 3}))
-  {
-    myDrop->begin(14, 1);
-    device.dispense(1, 1200);
-  }
-   if ((loc == Position{15, 4}))
-  {
-    myDrop->begin(14, 6);
-    device.dispense(2, 1200);
-  }
-   if ((loc == Position{0, 3}))
-  {
-    myDrop->begin(1, 1);
-    device.dispense(3, 1200);
-  }
-   if ((loc == Position{0, 4}))
-  {
-    myDrop->begin(1, 6);
-    device.dispense(4, 1200);
-  }
-
-  device.top_left_reservoir.updateState();
-  device.top_right_reservoir.updateState();
-  device.bottom_left_reservoir.updateState();
-  device.bottom_right_reservoir.updateState();
-}
-
-
-//STATE? Could turn into a state
-void magnet(uint8_t tick)
-{
-  if ((loc == Position{10, 2}))
-  {
-    device.toggle_Magnet(0);
-
-    while (!digitalRead(SW2_pin));
-  }
-
-  if ((loc == Position{5, 2}))
-  {
-    device.toggle_Magnet(0);
-    while (!digitalRead(SW2_pin));
-  }
 }

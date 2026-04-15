@@ -18,14 +18,12 @@
 
 class OpenDrop;
 
-//<-
 class Magnet
 {
   private:
     Position loc;
     bool state;
     int ID;
-
 
   public:
     Magnet (): ID(0), state(false), loc({-1, -1}) {}
@@ -43,8 +41,6 @@ class Magnet
 
     return state;
   }
-  
-
 };
 
 
@@ -57,28 +53,22 @@ public:
 
   friend class OpenDrop;
 
-  void begin(int x, int y);
+  void begin(Position pos);
   void move_right();
   void move_left();
   void move_up();
   void move_down();
-  void go(int x, int y);
-  int position_x();
-  int position_y();
-  int goal_x();
-  int goal_y();
-  int next_x();
-  int next_y();
+  void go(Position pos);
+  Position pos();
+  Position goal();
+  Position next();
   int num();
   bool is_moving();
 
 private:
-  uint8_t _pos_x;
-  uint8_t _pos_y;
-  uint8_t _goal_x;
-  uint8_t _goal_y;
-  uint8_t _next_x;
-  uint8_t _next_y;
+  Position _pos;
+  Position _goal;
+  Position _next;
   uint8_t _dropnum;
   bool _moving;
 };
@@ -97,12 +87,28 @@ enum DispenseState
 
 struct Position
 {
-  int x;
-  int y;
+  uint8_t x;
+  uint8_t y;
+
+  Position() : x(0), y(0) {}
+  Position(uint8_t x, uint8_t y) : x(x), y(y) {}
 
   bool operator ==(const Position& a) const
   {
     return (a.x == x && a.y == y);
+  }
+  Position operator +(const Position& a) const
+  {
+    return Position(x + a.x, y + a.y);
+  }
+  Position operator -(const Position& a) const
+  {
+    return Position(x - a.x, y - a.y);
+  }
+  void operator =(const Position& a)
+  {
+    this->x = a.x;
+    this->y = a.y;
   }
 };
 

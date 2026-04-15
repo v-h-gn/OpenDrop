@@ -311,9 +311,9 @@ void OpenDrop::update_Display(void) // Updated Display with Fluxls data
   // write coordinates
   display.setCursor(14, 4);
   display.print("X: ");
-  display.print(drops[0].position_x());
+  display.print(drops[0].pos().x);
   display.print(" Y: ");
-  display.print(drops[0].position_y());
+  display.print(drops[0].pos().y);
   display.print(" ");
   VOLTAGE_value = 0.5 * VOLTAGE_value + 0.5 * (analogRead(VSENS_pin) * 3.3 * (1500000 + 6800 + 5000) / 1024 / 6800);
   if (AC_flag)
@@ -543,7 +543,6 @@ void OpenDrop::update_Display(void) // Updated Display with Fluxls data
 
 void OpenDrop::set_Fluxels(bool fluxels_array[][FluxlPad_heigth])
 {
-
   for (int x = 0; x < (FluxlPad_width); x++)
     for (int y = 0; y < FluxlPad_heigth; y++)
       Fluxls[x][y] = fluxels_array[x][y];
@@ -555,7 +554,6 @@ bool OpenDrop::get_Fluxel(int x, int y)
 }
 
 void OpenDrop::drive_Fluxels(void) // Fill the chip with Fluxls array data
-
 {
   const int chip_delay = 5;
 
@@ -569,7 +567,6 @@ void OpenDrop::drive_Fluxels(void) // Fill the chip with Fluxls array data
   delayMicroseconds(chip_delay);
 
   for (int i = 0; i < 64; i++)
-
   {
     digitalWrite(DI_pin, Fluxls[pgm_read_byte_near(pad_lookup_x + i)][pgm_read_byte_near(pad_lookup_y + i)]);
     delayMicroseconds(chip_delay);
@@ -867,18 +864,18 @@ void OpenDrop::update_Drops(void)
     if (closedloop_flag)
     {
 
-      if ((drops[i].position_x() != drops[i].next_x()) | (drops[i].position_y() != drops[i].next_y()))
+      if (!(drops[i].pos() == drops[i].next()))
       {
         Serial.println("run");
-        if ((pad_feedback[pgm_read_byte_near(&FluxelID[drops[i].position_x()][drops[i].position_y()])] == 0) & (pad_feedback[pgm_read_byte_near(&FluxelID[drops[i].next_x()][drops[i].next_y()])] == 1))
+        if ((pad_feedback[pgm_read_byte_near(&FluxelID[drops[i].pos().x][drops[i].pos().y])] == 0) & (pad_feedback[pgm_read_byte_near(&FluxelID[drops[i].next().x][drops[i].next().y])] == 1))
         {
-          drops[i].begin(drops[i].next_x(), drops[i].next_y()); // if at position
+          drops[i].begin(drops[i].next()); // if at position
         }; // if not there
 
       }; // if feedback
     }
     else
-      drops[i].begin(drops[i].next_x(), drops[i].next_y());
+      drops[i].begin(drops[i].next());
   };
 }
 
@@ -890,7 +887,7 @@ void OpenDrop::update(void)
   // Fill Fluxel Array
   for (int i = 0; i < this->drop_count; i++)
   {
-    Fluxls[drops[i].next_x()][drops[i].next_y()] = true;
+    Fluxls[drops[i].next().x][drops[i].next().y] = true;
   };
 
   this->drive_Fluxels();
@@ -904,23 +901,6 @@ void OpenDrop::update(void)
   
 }
 
-int count = 0;
-
-Magnet *OpenDrop::getMagnet(){
-
-  if(this->magCount + 1 > max_magnets) {
-
-    return NULL;
-  }
-
-  this->magCount++;
-  
-  return &magnets[this->magCount -1];
-}
-
-DispenseState dispenseState;
-
-
 void OpenDrop::dispense(Reservoir reservoir, int delay_us)
 {
 
@@ -933,7 +913,7 @@ void OpenDrop::dispense(Reservoir reservoir, int delay_us)
   for (uint8_t droplet_num = 0; droplet_num < this->drop_count; droplet_num++)
   {
     Position pos = reservoir.getDispenseAnimationPosition(droplet_num);
-    drops_array[droplet_num]->begin(pos.x, pos.y);
+    drops_array[droplet_num]->begin(pos);
   }
   this->update();
   reservoir.updateState();
@@ -1078,6 +1058,7 @@ Position Reservoir::getDispenseAnimationPosition(int droplet)
 };
 
 // unused function
+/*
 bool OpenDrop::run(void)
 {
   bool transition = false;
@@ -1137,12 +1118,11 @@ bool OpenDrop::run(void)
           left = false;
       };
 
-      /*
       if (up) Serial.println("up");
       if (down) Serial.println("down");
       if (left) Serial.println("left");
       if (right) Serial.println("rigth");
-      */
+    
 
       if (up)
       {
@@ -1171,12 +1151,12 @@ bool OpenDrop::run(void)
           down = false;
       }
 
-      /*
+
       Serial.println("pow");
       Serial.println(d1);
       Serial.println(drops[i].position_x());
       Serial.println(drops[i].position_y());
-      */
+
 
       if (up)
         drops[i].move_up();
@@ -1195,6 +1175,7 @@ bool OpenDrop::run(void)
 
   return transition;
 };
+*/
 
 Drop *OpenDrop::getDrop()
 {
@@ -1277,360 +1258,243 @@ uint8_t OpenDrop::get_Temp_H_2(void) { return Adapter.get_Temp_H_2(); };
 uint8_t OpenDrop::get_Temp_L_3(void) { return Adapter.get_Temp_L_3(); };
 uint8_t OpenDrop::get_Temp_H_3(void) { return Adapter.get_Temp_H_3(); };
 
-void Drop::begin(int x, int y)
+void Drop::begin(Position pos)
 {
-  _pos_x = x;
-  _pos_y = y;
-  _next_x = x;
-  _next_y = y;
+  _pos = pos;
+  _next = pos;
   _moving = false;
 }
 
 void Drop::move_right(void)
 {
+  if (_pos.x < FluxlPad_width - 2)
+  {
+    _next.x = _pos.x + 1;
+  }
+  _next.y = _pos.y;
 
-  if (_pos_x < FluxlPad_width - 2)
-    _next_x = _pos_x + 1;
-  _next_y = _pos_y;
-
-  if ((_pos_x == 14) && (_pos_y == 1))
+  if (_pos == Position{14, 1})
   {
-    _next_x = 15;
-    _next_y = 0;
-  };
-  if ((_pos_x == 15) && (_pos_y == 0))
+    _next = Position{15, 0};
+  }
+  else if (_pos == Position{15, 0})
   {
-    _next_x = 15;
-    _next_y = 2;
-  };
-  if ((_pos_x == 15) && (_pos_y == 2))
+    _next = Position{15, 2};
+  }
+  else if (_pos == Position{15, 2} || _pos == Position{15, 1})
   {
-    _next_x = 15;
-    _next_y = 3;
-  };
-  if ((_pos_x == 15) && (_pos_y == 1))
+    _next = Position{15, 3};
+  }
+  else if (_pos == Position{14, 6})
   {
-    _next_x = 15;
-    _next_y = 3;
-  };
-
-  if ((_pos_x == 14) && (_pos_y == 6))
+    _next = Position{15, 7};
+  }
+  else if (_pos == Position{15, 7})
   {
-    _next_x = 15;
-    _next_y = 7;
-  };
-  if ((_pos_x == 15) && (_pos_y == 7))
+    _next = Position{15, 5};
+  }
+  else if (_pos == Position{15, 5} || _pos == Position{15, 6})
   {
-    _next_x = 15;
-    _next_y = 5;
-  };
-  if ((_pos_x == 15) && (_pos_y == 5))
+    _next = Position{15, 4};
+  }
+  else if (_pos == Position{0, 0})
   {
-    _next_x = 15;
-    _next_y = 4;
-  };
-  if ((_pos_x == 15) && (_pos_y == 6))
+    _next = Position{1, 1};
+  }
+  else if (_pos == Position{0, 2} || _pos == Position{0, 1})
   {
-    _next_x = 15;
-    _next_y = 4;
-  };
-
-  if ((_pos_x == 0) && (_pos_y == 0))
+    _next = Position{0, 0};
+  }
+  else if (_pos == Position{0, 3})
   {
-    _next_x = 1;
-    _next_y = 1;
-  };
-  if ((_pos_x == 0) && (_pos_y == 2))
+    _next = Position{0, 2};
+  }
+  else if (_pos == Position{0, 7})
   {
-    _next_x = 0;
-    _next_y = 0;
-  };
-  if ((_pos_x == 0) && (_pos_y == 3))
+    _next = Position{1, 6};
+  }
+  else if (_pos == Position{0, 5} || _pos == Position{0, 6})
   {
-    _next_x = 0;
-    _next_y = 2;
-  };
-  if ((_pos_x == 0) && (_pos_y == 1))
+    _next = Position{0, 7};
+  }
+  else if (_pos == Position{0, 4})
   {
-    _next_x = 0;
-    _next_y = 0;
+    _next = Position{0, 5};
   };
-
-  if ((_pos_x == 0) && (_pos_y == 7))
-  {
-    _next_x = 1;
-    _next_y = 6;
-  };
-  if ((_pos_x == 0) && (_pos_y == 5))
-  {
-    _next_x = 0;
-    _next_y = 7;
-  };
-  if ((_pos_x == 0) && (_pos_y == 4))
-  {
-    _next_x = 0;
-    _next_y = 5;
-  };
-  if ((_pos_x == 0) && (_pos_y == 6))
-  {
-    _next_x = 0;
-    _next_y = 7;
-  };
-
+  
   _moving = true;
 }
 
 void Drop::move_left(void)
 {
 
-  if (_pos_x > 1)
-    _next_x = _pos_x - 1;
-  _next_y = _pos_y;
+  if (_pos.x > 1)
+    _next.x = _pos.x - 1;
+  _next.y = _pos.y;
 
-  if ((_pos_x == 15) && (_pos_y == 0))
+  if (_pos == Position(15, 0))
   {
-    _next_x = 14;
-    _next_y = 1;
-  };
-  if ((_pos_x == 15) && (_pos_y == 2))
+    _next = Position(14, 1);
+  }
+  if (_pos == Position(15, 2))
   {
-    _next_x = 15;
-    _next_y = 0;
-  };
-  if ((_pos_x == 15) && (_pos_y == 3))
+    _next = Position(15, 0);
+  }
+  if (_pos == Position(15, 3))
   {
-    _next_x = 15;
-    _next_y = 2;
-  };
-  if ((_pos_x == 15) && (_pos_y == 1))
+    _next = Position(15, 2);
+  }
+  if (_pos == Position(15, 1))
   {
-    _next_x = 15;
-    _next_y = 0;
-  };
+    _next = Position(15, 0);
+  }
 
-  if ((_pos_x == 15) && (_pos_y == 7))
+  if (_pos == Position(15, 7))
   {
-    _next_x = 14;
-    _next_y = 6;
-  };
-  if ((_pos_x == 15) && (_pos_y == 5))
+    _next = Position(14, 6);
+  }
+  if (_pos == Position(15, 5))
   {
-    _next_x = 15;
-    _next_y = 7;
-  };
-  if ((_pos_x == 15) && (_pos_y == 4))
+    _next = Position(15, 7);
+  }
+  if (_pos == Position(15, 4))
   {
-    _next_x = 15;
-    _next_y = 5;
-  };
-  if ((_pos_x == 15) && (_pos_y == 6))
+    _next = Position(15, 5);
+  }
+  if (_pos == Position(15, 6))
   {
-    _next_x = 15;
-    _next_y = 7;
-  };
+    _next = Position(15, 7);
+  }
 
-  if ((_pos_x == 1) && (_pos_y == 1))
+  if (_pos == Position(1, 1))
   {
-    _next_x = 0;
-    _next_y = 0;
-  };
-  if ((_pos_x == 0) && (_pos_y == 0))
+    _next = Position(0, 0);
+  }
+  if (_pos == Position(0, 0))
   {
-    _next_x = 0;
-    _next_y = 2;
-  };
-  if ((_pos_x == 0) && (_pos_y == 2))
+    _next = Position(0, 2);
+  }
+  if (_pos == Position(0, 2))
   {
-    _next_x = 0;
-    _next_y = 3;
-  };
-  if ((_pos_x == 0) && (_pos_y == 1))
+    _next = Position(0, 3);
+  }
+  if (_pos == Position(0, 1))
   {
-    _next_x = 0;
-    _next_y = 3;
-  };
+    _next = Position(0, 3);
+  }
 
-  if ((_pos_x == 1) && (_pos_y == 6))
+  if (_pos == Position(1, 6))
   {
-    _next_x = 0;
-    _next_y = 7;
-  };
-  if ((_pos_x == 0) && (_pos_y == 7))
+    _next = Position(0, 7);
+  }
+  if (_pos == Position(0, 7))
   {
-    _next_x = 0;
-    _next_y = 5;
-  };
-  if ((_pos_x == 0) && (_pos_y == 5))
+    _next = Position(0, 5);
+  }
+  if (_pos == Position(0, 5))
   {
-    _next_x = 0;
-    _next_y = 4;
-  };
-  if ((_pos_x == 0) && (_pos_y == 6))
+    _next = Position(0, 4);
+  }
+  if (_pos == Position(0, 6))
   {
-    _next_x = 0;
-    _next_y = 4;
-  };
+    _next = Position(0, 4);
+  }
 
   _moving = true;
 }
 
 void Drop::move_up(void)
 {
+  if ((_pos.y > 0) && (_pos.x > 0) && (_pos.x < 15))
+  {
+    _next = _pos - Position(0, 1);
+  }
+  else
+  {
+    _next = _pos;
+  }
 
-  if ((_pos_y > 0) && (_pos_x > 0) && (_pos_x < 15))
-    _next_y = _pos_y - 1;
-  _next_x = _pos_x;
+  if (_pos == Position(15, 0))
+  {
+    _next = Position(15, 1);
+  }
+  if (_pos == Position(15, 2))
+  {
+    _next = Position(15, 1);
+  }
 
-  if ((_pos_x == 15) && (_pos_y == 0))
+  if (_pos == Position(15, 7))
   {
-    _next_x = 15;
-    _next_y = 1;
-  };
-  if ((_pos_x == 15) && (_pos_y == 2))
+    _next = Position(15, 6);
+  }
+  if (_pos == Position(15, 5))
   {
-    _next_x = 15;
-    _next_y = 1;
-  };
+    _next = Position(15, 6);
+  }
 
-  if ((_pos_x == 15) && (_pos_y == 7))
+  if (_pos == Position(0, 0))
   {
-    _next_x = 15;
-    _next_y = 6;
-  };
-  if ((_pos_x == 15) && (_pos_y == 5))
+    _next = Position(0, 1);
+  }
+  if (_pos == Position(0, 2))
   {
-    _next_x = 15;
-    _next_y = 6;
-  };
+    _next = Position(0, 1);
+  }
 
-  if ((_pos_x == 0) && (_pos_y == 0))
+  if (_pos == Position(0, 7))
   {
-    _next_x = 0;
-    _next_y = 1;
-  };
-  if ((_pos_x == 0) && (_pos_y == 2))
+    _next = Position(0, 6);
+  }
+  if (_pos == Position(0, 5))
   {
-    _next_x = 0;
-    _next_y = 1;
-  };
-
-  if ((_pos_x == 0) && (_pos_y == 7))
-  {
-    _next_x = 0;
-    _next_y = 6;
-  };
-  if ((_pos_x == 0) && (_pos_y == 5))
-  {
-    _next_x = 0;
-    _next_y = 6;
-  };
+    _next = Position(0, 6);
+  }
 
   _moving = true;
 }
 
 void Drop::move_down(void)
 {
-
-  if ((_pos_y < 7) && (_pos_x > 0) && (_pos_x < 15))
-    _next_y = _pos_y + 1;
-  _next_x = _pos_x;
-
-  if ((_pos_x == 15) && (_pos_y == 0))
+  if ((_pos.y < 7) && (_pos.x > 0) && (_pos.x < 15))
   {
-    _next_x = 15;
-    _next_y = 1;
-  };
-  if ((_pos_x == 15) && (_pos_y == 2))
+    _next = _pos + Position(0, 1);
+  }
+  else if (_pos == Position(15, 0) || _pos == Position(15, 2))
   {
-    _next_x = 15;
-    _next_y = 1;
-  };
-
-  if ((_pos_x == 15) && (_pos_y == 7))
+    _next = Position(15, 1);
+  }
+  else if (_pos == Position(15, 7) || _pos == Position(15, 5))
   {
-    _next_x = 15;
-    _next_y = 6;
-  };
-  if ((_pos_x == 15) && (_pos_y == 5))
+    _next = Position(15, 6);
+  }
+  else if (_pos == Position(0, 0) || _pos == Position(0, 2))
   {
-    _next_x = 15;
-    _next_y = 6;
-  };
-
-  if ((_pos_x == 0) && (_pos_y == 0))
+    _next = Position(0, 1);
+  }
+  else if (_pos == Position(0, 7) || _pos == Position(0, 5))
   {
-    _next_x = 0;
-    _next_y = 1;
-  };
-  if ((_pos_x == 0) && (_pos_y == 2))
-  {
-    _next_x = 0;
-    _next_y = 1;
-  };
-
-  if ((_pos_x == 0) && (_pos_y == 7))
-  {
-    _next_x = 0;
-    _next_y = 6;
-  };
-  if ((_pos_x == 0) && (_pos_y == 5))
-  {
-    _next_x = 0;
-    _next_y = 6;
-  };
+    _next = Position(0, 6);
+  }
 
   _moving = true;
 }
 
-int Drop::position_x(void)
-{
 
-  return _pos_x;
-}
 
-int Drop::position_y(void)
-{
 
-  return _pos_y;
-}
-
-int Drop::next_x(void)
-{
-
-  return _next_x;
-}
-
-int Drop::next_y(void)
-{
-
-  return _next_y;
-}
-
-int Drop::goal_x(void)
-{
-
-  return _goal_x;
-}
-
-int Drop::goal_y(void)
-{
-
-  return _goal_y;
-}
-
-int Drop::num(void)
+int Drop::num()
 {
 
   return _dropnum;
 }
 
-void Drop::go(int x, int y)
+void Drop::go(Position pos)
 {
-  _goal_x = x;
-  _goal_y = y;
+  _goal = pos;
 }
 
-bool Drop::is_moving(void)
+/* This function is useless, doesn't do anything*/
+bool Drop::is_moving()
 {
 
   return _moving;
