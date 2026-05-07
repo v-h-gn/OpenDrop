@@ -17,8 +17,8 @@ char version_str[] = "V42.10.";
 
 uint8_t OpenDropID = 0; // defined in code
 
-bool Fluxls[FluxlPad_width][FluxlPad_heigth];
-bool Fluxls_feedback[FluxlPad_width][FluxlPad_heigth];
+bool Fluxls[FLUXPAD_WIDTH][FLUXPAD_HEIGHT];
+bool Fluxls_feedback[FLUXPAD_WIDTH][FLUXPAD_HEIGHT];
 byte pad_feedback[128];
 
 #define SETTING_Size 6
@@ -266,8 +266,8 @@ void spi_out(int SS, byte cmd_byte, byte data_byte)
 
 void clear_Fluxels()
 {
-  for (int x = 0; x < FluxlPad_width; x++)
-    for (int y = 0; y < FluxlPad_heigth; y++)
+  for (int x = 0; x < FLUXPAD_WIDTH; x++)
+    for (int y = 0; y < FLUXPAD_HEIGHT; y++)
       Fluxls[x][y] = false;
 };
 
@@ -277,19 +277,19 @@ bool free_Fluxel(uint8_t x, uint8_t y, uint8_t dir)
 
   if (check && (x > 0) && (dir == LEFT))
     check = pad_feedback[pgm_read_byte_near(&FluxelID[x - 1][y])] == 1; // left
-  if (check && (x < (FluxlPad_width - 1)) && (dir == RIGHT))
+  if (check && (x < (FLUXPAD_WIDTH - 1)) && (dir == RIGHT))
     check = pad_feedback[pgm_read_byte_near(&FluxelID[x + 1][y])] == 1; // right
   if (check && (y > 0) && (dir == UP))
     check = pad_feedback[pgm_read_byte_near(&FluxelID[x][y - 1])] == 1; // up
-  if (check && (y < (FluxlPad_heigth - 1)) && (dir == DOWN))
+  if (check && (y < (FLUXPAD_HEIGHT - 1)) && (dir == DOWN))
     check = pad_feedback[pgm_read_byte_near(&FluxelID[x][y + 1])] == 1; // down
   if (check && (x > 0) & (y > 0) && ((dir == UP) || (dir == LEFT)))
     check = pad_feedback[pgm_read_byte_near(&FluxelID[x - 1][y - 1])] == 1; // top left
-  if (check && (x > 0) & (y < (FluxlPad_heigth - 1)) && ((dir == DOWN) || (dir == LEFT)))
+  if (check && (x > 0) & (y < (FLUXPAD_HEIGHT - 1)) && ((dir == DOWN) || (dir == LEFT)))
     check = pad_feedback[pgm_read_byte_near(&FluxelID[x - 1][y + 1])] == 1; // bottom left
-  if (check && (x < (FluxlPad_width - 1)) && (y > 0) && ((dir == UP) || (dir == RIGHT)))
+  if (check && (x < (FLUXPAD_WIDTH - 1)) && (y > 0) && ((dir == UP) || (dir == RIGHT)))
     check = pad_feedback[pgm_read_byte_near(&FluxelID[x + 1][y - 1])] == 1; // top right
-  if (check && (x < (FluxlPad_width - 1)) && (y < (FluxlPad_heigth - 1)) && ((dir == RIGHT) || (dir == DOWN)))
+  if (check && (x < (FLUXPAD_WIDTH - 1)) && (y < (FLUXPAD_HEIGHT - 1)) && ((dir == RIGHT) || (dir == DOWN)))
     check = pad_feedback[pgm_read_byte_near(&FluxelID[x + 1][y + 1])] == 1; // bottom right
 
   return check;
@@ -324,13 +324,13 @@ void OpenDrop::update_Display(void) // Updated Display with Fluxls data
   display.print("V");
 
   // draw Grid
-  for (int x = 1; x < (FluxlPad_width - 1); x++)
-    for (int y = 1; y < FluxlPad_heigth; y++)
+  for (int x = 1; x < (FLUXPAD_WIDTH - 1); x++)
+    for (int y = 1; y < FLUXPAD_HEIGHT; y++)
       display.drawPixel(x * 6 + 16, y * 6 + 15, WHITE);
 
   // draw Fluxels and Reservoirs
-  for (int x = 0; x < (FluxlPad_width); x++)
-    for (int y = 0; y < FluxlPad_heigth; y++)
+  for (int x = 0; x < (FLUXPAD_WIDTH); x++)
+    for (int y = 0; y < FLUXPAD_HEIGHT; y++)
       if (Fluxls[x][y])
       {
         if (x == 0)
@@ -408,8 +408,8 @@ void OpenDrop::update_Display(void) // Updated Display with Fluxls data
   if (feedback)
   {
     this->read_Fluxels();
-    for (int x = 0; x < (FluxlPad_width); x++)
-      for (int y = 0; y < FluxlPad_heigth; y++)
+    for (int x = 0; x < (FLUXPAD_WIDTH); x++)
+      for (int y = 0; y < FLUXPAD_HEIGHT; y++)
         if (Fluxls_feedback[x][y])
         {
           if (x == 0)
@@ -541,10 +541,10 @@ void OpenDrop::update_Display(void) // Updated Display with Fluxls data
   display.display();
 };
 
-void OpenDrop::set_Fluxels(bool fluxels_array[][FluxlPad_heigth])
+void OpenDrop::set_Fluxels(bool fluxels_array[][FLUXPAD_HEIGHT])
 {
-  for (int x = 0; x < (FluxlPad_width); x++)
-    for (int y = 0; y < FluxlPad_heigth; y++)
+  for (int x = 0; x < (FLUXPAD_WIDTH); x++)
+    for (int y = 0; y < FLUXPAD_HEIGHT; y++)
       Fluxls[x][y] = fluxels_array[x][y];
 }
 
@@ -881,6 +881,7 @@ void OpenDrop::update_Drops(void)
 
 void OpenDrop::update(void)
 {
+  this->update_Drops();
 
   clear_Fluxels(); // clear Fluxel Array
 
@@ -892,170 +893,11 @@ void OpenDrop::update(void)
 
   this->drive_Fluxels();
 
-  this->update_Display();
-
   if (sound)
   {
     OpenDropAudio.playMe(3);
   }
-  
 }
-
-void OpenDrop::dispense(Reservoir reservoir, int delay_us)
-{
-
-  Drop *Drop1 = this->getDrop();
-  Drop *Drop2 = this->getDrop();
-  Drop *Drop3 = this->getDrop();
-
-  Drop* drops_array[3] = {Drop1, Drop2, Drop3};
-
-  for (uint8_t droplet_num = 0; droplet_num < this->drop_count; droplet_num++)
-  {
-    Position pos = reservoir.getDispenseAnimationPosition(droplet_num);
-    drops_array[droplet_num]->begin(pos);
-  }
-  this->update();
-  reservoir.updateState();
-}
-
-Position Reservoir::getDispenseAnimationPosition(int droplet)
-{
-  switch (dispenseState)
-  {
-  case STEP_1:
-    if (reservoir == TOP_RIGHT)
-      return {15, 3};
-    else if (reservoir == BOTTOM_RIGHT)
-      return {15, 4};
-    else if (reservoir == TOP_LEFT)
-      return {0, 3};
-    else if (reservoir == BOTTOM_LEFT)
-      return {0, 4};
-    else
-      return {-1, -1}; // Invalid reservoir
-      break;
-
-  case STEP_2:
-    if (reservoir == TOP_RIGHT)
-      return {15, 4};
-    else if (reservoir == BOTTOM_RIGHT)
-      return {15, 5};
-    else if (reservoir == TOP_LEFT)
-      return {0, 4};
-    else if (reservoir == BOTTOM_LEFT)
-      return {0, 5};
-    else
-      return {-1, -1}; // Invalid reservoir
-    break;
-
-  case STEP_3:
-    if (reservoir == TOP_RIGHT)
-    {
-      if (droplet == 0)
-        return {15, 1};
-      else
-        return {15, 0};
-    }
-    else if (reservoir == BOTTOM_RIGHT)
-    {
-      if (droplet == 0)
-        return {15, 6};
-      else
-        return {15, 7};
-    }
-    else if (reservoir == TOP_LEFT)
-    {
-      if (droplet == 0)
-        return {0, 1};
-      else
-        return {0, 0};
-    }
-    else if (reservoir == BOTTOM_LEFT)
-    {
-      if (droplet == 0)
-        return {0, 6};
-      else
-        return {0, 7};
-    }
-    else
-    {
-      return {-1, -1}; // Invalid reservoir
-    }
-    break;
-
-  case STEP_4:
-    if (reservoir == TOP_RIGHT)
-    {
-      return {14, 1};
-    }
-    else if (reservoir == BOTTOM_RIGHT)
-    {
-      return {14, 6};
-    }
-    else if (reservoir == TOP_LEFT)
-    {
-      return {1, 1};
-    }
-    else if (reservoir == BOTTOM_LEFT)
-    {
-      return {1, 6};
-    }
-    else
-    {
-      return {-1, -1}; // Invalid reservoir
-    }
-    break;
-
-  case STEP_5:
-    if (reservoir == TOP_RIGHT)
-    {
-      if (droplet == 1)
-        return {15, 3};
-      else
-        return {15, 2};
-    }
-    else if (reservoir == BOTTOM_RIGHT)
-    {
-      if (droplet == 1)
-        return {15, 4};
-      else
-        return {15, 5};
-    }
-    else if (reservoir == TOP_LEFT)
-    {
-      if (droplet == 1)
-        return {0, 3};
-      else
-        return {0, 2};
-    }
-    else if (reservoir == BOTTOM_LEFT)
-    {
-      if (droplet == 1)
-        return {0, 4};
-      else
-        return {0, 5};
-    }
-    else
-    {
-      return {-1, -1}; // Invalid reservoir
-    }
-    break;
-
-  case STEP_6:
-    if (reservoir == TOP_RIGHT)
-      return {15, 3};
-    else if (reservoir == BOTTOM_RIGHT)
-      return {15, 4};
-    else if (reservoir == TOP_LEFT)
-      return {0, 3};
-    else if (reservoir == BOTTOM_LEFT)
-      return {0, 4};
-    else
-      return {-1, -1}; // Invalid reservoir
-      break;
-  }
-};
 
 // unused function
 /*
@@ -1184,7 +1026,7 @@ Drop *OpenDrop::getDrop()
   this->drop_count = num;
   drops[num - 1]._dropnum = num;
   // Serial.println(max_drops);
-  if (num > max_drops)
+  if (num > MAX_DROPS)
     return NULL;
 
   return &drops[num - 1];
@@ -1210,6 +1052,46 @@ void OpenDrop::set_voltage(uint16_t voltage, bool AC_on, uint16_t frequence)
   AC_flag = AC_on;
 }
 
+uint16_t OpenDrop::getVoltageSet()
+{
+  return Voltage_set;
+}
+
+uint32_t OpenDrop::getACFrequency()
+{
+  return AC_frequency;
+}
+
+bool OpenDrop::getACFlag()
+{
+  return AC_flag;
+}
+
+bool OpenDrop::getSoundFlag()
+{
+  return sound;
+}
+
+bool OpenDrop::getFeedbackFlag()
+{
+  return feedback;
+}
+
+void OpenDrop::saveSettings(bool AC_state, int voltage, int frequency, bool set_sound, bool set_feedback)
+{
+  this->set_voltage(voltage, AC_state, frequency);
+  sound = set_sound;
+  feedback = set_feedback;
+  settings.value[0] = AC_state;
+  settings.value[1] = voltage;
+  settings.value[2] = frequency;
+  settings.value[3] = set_sound;
+  settings.value[4] = set_feedback;
+  my_flash_store.write(settings);
+
+  HV_set_ok = false;
+}
+
 void OpenDrop::toggle_Magnet(uint8_t magnet)
 {
  
@@ -1226,7 +1108,6 @@ uint8_t OpenDrop::get_ID()
   return OpenDropID;
 }
 
-//remove?
 void OpenDrop::set_joy(uint8_t x, uint8_t y)
 {
   _joy.x = x;
@@ -1267,7 +1148,7 @@ void Drop::begin(Position pos)
 
 void Drop::move_right(void)
 {
-  if (_pos.x < FluxlPad_width - 2)
+  if (_pos.x < FLUXPAD_WIDTH - 2)
   {
     _next.x = _pos.x + 1;
   }
@@ -1479,9 +1360,6 @@ void Drop::move_down(void)
   _moving = true;
 }
 
-
-
-
 int Drop::num()
 {
 
@@ -1500,6 +1378,7 @@ bool Drop::is_moving()
   return _moving;
 }
 
+/* Deprecated */
 void Menu(OpenDrop &theOpenDrop)
 {
   int JOY_value;

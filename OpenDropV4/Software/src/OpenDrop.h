@@ -13,8 +13,16 @@
 #include "Adafruit_GFX.h"
 // #include <tuple>
 
-#define max_drops 8
-#define max_magnets 3
+#define FLUXPAD_WIDTH 16
+#define FLUXPAD_HEIGHT 8
+
+#define MAX_DROPS 8
+#define NUM_MAGNETS 3
+#define NUM_RESERVOIRS 4
+#define NUM_HEATERS 3
+
+#define NUM_CONTROL_BYTES_OUT 24
+#define NUM_CONTROL_BYTES_IN 16
 
 class OpenDrop;
 
@@ -73,18 +81,6 @@ private:
   bool _moving;
 };
 
-//STATE
-enum DispenseState
-{
-  UPDATE,
-  STEP_1,
-  STEP_2,
-  STEP_3,
-  STEP_4,
-  STEP_5,
-  STEP_6,
-};
-
 struct Position
 {
   uint8_t x;
@@ -125,11 +121,9 @@ public:
     TOP_LEFT,
     BOTTOM_LEFT,
   };
-  void updateState() { dispenseState = static_cast<DispenseState>((dispenseState + 1) % 7);};
 
 private:
   int reservoir;
-  DispenseState dispenseState;
 };
 
 class OpenDrop
@@ -157,6 +151,12 @@ public:
   void show_joy(boolean val);
   void show_feedback(boolean val);
   void set_voltage(uint16_t voltage, bool AC_on, uint16_t frequence);
+  uint16_t getVoltageSet();
+  uint32_t getACFrequency();
+  bool getACFlag();
+  bool getSoundFlag();
+  bool getFeedbackFlag();
+  void saveSettings(bool AC_state, int voltage, int frequency, bool sound, bool feedback);
   void set_Pin(uint8_t pin, boolean val);
   void set_Magnet(uint8_t magnet, bool state);
   void toggle_Magnet(uint8_t magnet);
@@ -182,13 +182,11 @@ public:
 private:
   uint8_t _addr;
   uint16_t _freq;
-  Drop drops[max_drops];
-  Magnet magnets[max_magnets];
+  Drop drops[MAX_DROPS];
+  Magnet magnets[NUM_MAGNETS];
   uint8_t drop_count = 0;
   int _runing;
   Position _joy;
   bool _show_joy;
   //  PWM _pwm;
 };
-
-void Menu(OpenDrop &theOpenDrop);

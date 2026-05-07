@@ -4,9 +4,6 @@
 #define board_ID	0x1     // 0x1=V42 ,OpenDrop ID = board_ID higher 4 bits, Adapter ID lower 4 bits 
 #define OpenDropV40_downgrade 0  //use for V40
 
-#define FluxlPad_width 16
-#define FluxlPad_heigth 8
-
 
 // If using software SPI (the default case):
 #define OLED_MOSI   20
