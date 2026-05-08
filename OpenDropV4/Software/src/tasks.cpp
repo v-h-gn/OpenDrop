@@ -35,7 +35,7 @@ void ButtonTask::tickButton(uint64_t tick, bool button_state)
         }
         else
         {
-            this->state = ButtonTask::RELEASED;
+            this->state = ButtonTask::UP_RELEASE;
         }
         break;
     case ButtonTask::PRESSED:
@@ -51,7 +51,7 @@ void ButtonTask::tickButton(uint64_t tick, bool button_state)
         }
         else
         {
-            this->state = ButtonTask::PRESSED;
+            this->state = ButtonTask::DOWN_PRESS;
         }
         break;
     }
