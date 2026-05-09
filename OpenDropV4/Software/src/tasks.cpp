@@ -64,29 +64,62 @@ void JoystickTask::tickJoystick(uint64_t tick)
         return;
     }
     uint32_t JOY_value = analogRead(JOY_pin);
-    if ((JOY_value < 950))
+    
+
+    switch (this->state)
     {
-        // state transition per the value of the analog read
-        if ((JOY_value > 725))
+    case JoystickTask::HOLD:
+        if (JOY_value < 950)
         {
-            this->state = JoystickTask::UP;
-        }
-        else if ((JOY_value > 597))
-        {
-            this->state = JoystickTask::LEFT;
-        }
-        else if ((JOY_value > 256))
-        {
-            this->state = JoystickTask::DOWN;
+            // state transition per the value of the analog read
+            if (JOY_value > 725)
+            {
+                this->state = JoystickTask::UP;
+            }
+            else if (JOY_value > 597)
+            {
+                this->state = JoystickTask::LEFT;
+            }
+            else if (JOY_value > 256)
+            {
+                this->state = JoystickTask::DOWN;
+            }
+            else
+            {
+                this->state = JoystickTask::RIGHT;
+            }
         }
         else
         {
-            this->state = JoystickTask::RIGHT;
+            this->state = JoystickTask::HOLD;
         }
-    }
-    else
-    {
-        this->state = JoystickTask::HOLD;
+        break;
+    case JoystickTask::UP:
+        if (!((JOY_value < 950) && (JOY_value > 725)))
+        {
+            this->state = JoystickTask::HOLD;
+        }
+        break;
+    case JoystickTask::DOWN:
+        if (!((JOY_value < 597) && (JOY_value > 256)))
+        {
+            this->state = JoystickTask::HOLD;
+        }
+        break;
+    case JoystickTask::LEFT:
+        if (!((JOY_value < 725) && (JOY_value > 597)))
+        {
+            this->state = JoystickTask::HOLD;
+        }
+        break;
+    case JoystickTask::RIGHT:
+        if (!((JOY_value < 256) && (JOY_value > 0)))
+        {
+            this->state = JoystickTask::HOLD;
+        }
+        break;
+     default:
+         break;
     }
 };
 
@@ -437,5 +470,107 @@ void MenuTask::tickMenu(uint64_t tick, JoystickTask::State curr_dir, JoystickTas
     default:
         this->state = MenuTask::HIDDEN;
         break;
+    }
+}
+
+void DispenseTask::tickDispense(uint64_t tick, ButtonTask::State button, Drop* myDrop)
+{
+    if (tick % this->period != 0)
+    {
+        return;
+    }
+
+    switch (this->state)
+    {    
+        case DispenseTask::IDLE:
+            if (button == ButtonTask::UP_RELEASE)
+            {
+                this->state = DispenseTask::STEP1;
+            }
+            break;
+        case DispenseTask::STEP1:
+            this->state = DispenseTask::STEP2;
+            break;
+        case DispenseTask::STEP2:
+            this->state = DispenseTask::STEP3;
+            break;
+        case DispenseTask::STEP3:
+            this->state = DispenseTask::STEP4;
+            break;
+        case DispenseTask::STEP4:
+            this->state = DispenseTask::STEP5;
+            break;
+        case DispenseTask::STEP5:
+            this->state = DispenseTask::STEP6;
+            break;
+        case DispenseTask::STEP6:
+            this->state = DispenseTask::IDLE;
+            break;
+        default:
+            this->state = DispenseTask::IDLE;
+            break;
+    }
+
+    switch (this->state)
+    {
+        case DispenseTask::IDLE:
+            break;
+        case DispenseTask::STEP1:
+            myDrop->go(this->reservoir.getDispenseAnimationPosition(0));
+            break;
+        case DispenseTask::STEP2:
+            myDrop->go(this->reservoir.getDispenseAnimationPosition(1));
+            break;
+        case DispenseTask::STEP3:
+            myDrop->go(this->reservoir.getDispenseAnimationPosition(2));
+            break;
+        case DispenseTask::STEP4:
+            myDrop->go(this->reservoir.getDispenseAnimationPosition(3));
+            break;
+        case DispenseTask::STEP5:
+            myDrop->go(this->reservoir.getDispenseAnimationPosition(4));
+            break;
+        case DispenseTask::STEP6:
+            myDrop->go(this->reservoir.getDispenseAnimationPosition(5));
+            break;
+        default:
+            break;
+    }
+}
+
+void MagnetTask::tickMagnet(uint64_t tick, ButtonTask::State button, Drop* myDrop, OpenDrop &device)
+{
+    if (tick % this->period != 0)
+    {
+        return;
+    }
+
+    switch (this->state)
+    {
+        case MagnetTask::OFF:
+            if (button == ButtonTask::UP_RELEASE )
+            {
+                this->state = MagnetTask::ON;
+            }
+            break;
+        case MagnetTask::ON:
+            if (button == ButtonTask::UP_RELEASE)
+            {
+                this->state = MagnetTask::OFF;
+            }
+            break;
+        default:
+            this->state = MagnetTask::OFF;
+            break;
+    }
+
+    switch (this->state)
+    {
+        case MagnetTask::OFF:
+        case MagnetTask::ON:
+            device.toggle_Magnet(this->magnet.getID());
+            break;
+        default:
+            break;
     }
 }

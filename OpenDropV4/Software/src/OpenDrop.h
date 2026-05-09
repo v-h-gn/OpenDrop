@@ -17,7 +17,7 @@
 #define FLUXPAD_HEIGHT 8
 
 #define MAX_DROPS 8
-#define NUM_MAGNETS 3
+#define NUM_MAGNETS 2
 #define NUM_RESERVOIRS 4
 #define NUM_HEATERS 3
 
@@ -35,7 +35,6 @@ class Magnet
 
   public:
     Magnet (): ID(0), state(false), loc({-1, -1}) {}
-
     Magnet(int id, Position loc) : ID(id), state(false), loc(loc) {}
     Position getLocation() const { return loc; }
     int getID() const { return ID; }
@@ -136,6 +135,8 @@ public:
   Reservoir top_right_reservoir = Reservoir(Reservoir::TOP_RIGHT);
   Reservoir bottom_left_reservoir = Reservoir(Reservoir::BOTTOM_LEFT);
   Reservoir bottom_right_reservoir = Reservoir(Reservoir::BOTTOM_RIGHT);
+  Magnet magnet0 = Magnet(0, Position(5,2));
+  Magnet magnet1 = Magnet(1, Position(10,2));
   void begin(char code_str[]);
   bool run(void);
   void dispense(Reservoir reservoir, int delay_us);
@@ -183,7 +184,7 @@ private:
   uint8_t _addr;
   uint16_t _freq;
   Drop drops[MAX_DROPS];
-  Magnet magnets[NUM_MAGNETS];
+  Magnet magnets[NUM_MAGNETS] = {magnet0, magnet1};
   uint8_t drop_count = 0;
   int _runing;
   Position _joy;

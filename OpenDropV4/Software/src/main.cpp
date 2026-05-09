@@ -29,9 +29,9 @@ uint8_t ControlBytesOut[NUM_CONTROL_BYTES_OUT];
 ButtonTask switch1, switch2;
 JoystickTask joystick;
 SerialCommTask serialTask;
-MagnetTask magnets[NUM_MAGNETS];
+MagnetTask magnets[NUM_MAGNETS] = {MagnetTask(device.magnet0), MagnetTask(device.magnet1)};
 HeatingTask heaters[NUM_HEATERS];
-DispenseTask dispensers[NUM_RESERVOIRS];
+DispenseTask dispensers[NUM_RESERVOIRS] = {DispenseTask(device.top_left_reservoir), DispenseTask(device.top_right_reservoir), DispenseTask(device.bottom_left_reservoir), DispenseTask(device.bottom_right_reservoir)};
 MenuTask menu;
 DisplayTask displayTask;
 
@@ -86,8 +86,13 @@ void loop()
   joystick.moveDroplet(tick, myDrop);
 
   // tick dispensers and magnets
-  dispensers[0].tickDispense(tick, myDrop->pos());
-  magnets[0].tickMagnet(tick);
+  dispensers[0].tickDispense(tick, switch2.state, myDrop);
+  dispensers[1].tickDispense(tick, switch2.state, myDrop);
+  dispensers[2].tickDispense(tick, switch2.state, myDrop);
+  dispensers[3].tickDispense(tick, switch2.state, myDrop);
+
+  magnets[0].tickMagnet(tick, switch2.state, myDrop);
+  magnets[1].tickMagnet(tick, switch2.state, myDrop);
 
 
   // Update menu and display 

@@ -60,12 +60,23 @@ struct MenuTask
     void tickMenu(uint64_t tick, JoystickTask::State curr_dir, JoystickTask::State prev_dir, ButtonTask::State button, OpenDrop& device);
 };
 
-struct ReservoirTask
-{
+struct DispenseTask
+{   
+    enum State
+    {
+        STEP1,
+        STEP2,
+        STEP3,
+        STEP4,
+        STEP5,
+        STEP6,
+        IDLE
+    } state;
+
     Reservoir reservoir;
     uint64_t period;
-    ReservoirTask(Reservoir reservoir) : reservoir(reservoir) {}
-    void tickReservoir(uint64_t tick);
+    DispenseTask(Reservoir reservoir) : reservoir(reservoir) {}
+    void tickDispense(uint64_t tick, ButtonTask::State button, Drop* myDrop);
 };
 
 struct SerialCommTask
@@ -93,9 +104,10 @@ struct MagnetTask
     };
 
     State state;
+    Magnet magnet;
     uint64_t period = 0;
-    MagnetTask() : state(OFF) {}
-    void tickMagnet(uint64_t tick);
+    MagnetTask(Magnet magnet) : state(OFF), magnet(magnet) {}
+    void tickMagnet(uint64_t tick, ButtonTask::State button, Drop* myDrop, OpenDrop &device);
 };
 
 struct HeatingTask
@@ -110,20 +122,6 @@ struct HeatingTask
     uint64_t period;
     HeatingTask() : state(OFF) {}
     void tickHeating(uint64_t tick);
-};
-
-struct DispenseTask
-{
-    enum State
-    {
-        DISPENSE_STEP1,
-        IDLE
-    };
-
-    State state;
-    uint64_t period = 0;
-    DispenseTask() : state(IDLE) {}
-    void tickDispense(uint64_t tick, Position reservoir);
 };
 
 struct DisplayTask
